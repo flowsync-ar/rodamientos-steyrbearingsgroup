@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import {
   Card,
@@ -222,9 +223,8 @@ export function RegistrationForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="new-password"
                 minLength={8}
                 value={formData.password}
@@ -234,9 +234,8 @@ export function RegistrationForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={(e) => update('confirmPassword', e.target.value)}
@@ -272,14 +271,7 @@ export function RegistrationForm() {
                   onChange={(e) => handleCuitChange(e.target.value)}
                   className="flex-1"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={validateCuit}
-                  disabled={afipState.status === 'loading' || !formData.cuit}
-                >
-                  {afipState.status === 'loading' ? 'Verificando…' : 'Verificar'}
-                </Button>
+     
               </div>
               {afipState.status === 'valid' && (
                 <p className="text-sm text-green-600">{afipState.message}</p>

@@ -119,12 +119,12 @@ export default async function PublicLayout({ children }: { children: ReactNode }
             <p>
               Desarrollado por{' '}
               <a
-                href="https://www.nodocore.com.ar/nodo-it"
+                href="https://www.flowsync.com.ar"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors hover:opacity-80"
               >
-                <strong style={{ color: '#DA5A0D' }}>NODO</strong> Core
+                <strong style={{ color: '#128A5C' }}>FlowSync</strong> Core
               </a>
             </p>
           </div>

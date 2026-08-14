@@ -95,17 +95,34 @@ export async function signOut() {
   redirect('/')
 }
 
-export async function resetPassword(formData: FormData) {
+export async function resetPassword(
+  _prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
   const supabase = await createClient()
   const email = formData.get('email') as string
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
   })
 
+  // Always report success, regardless of whether the email exists,
+  // to avoid leaking which emails are registered.
+  return { success: true }
+}
+
+export async function updatePassword(
+  _prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const supabase = await createClient()
+  const password = formData.get('password') as string
+
+  const { error } = await supabase.auth.updateUser({ password })
+
   if (error) {
-    return { error: error.message }
+    return { error: 'No se pudo actualizar la contraseña. Intentá de nuevo.' }
   }
 
-  return { success: true }
+  redirect('/login?success=password-updated')
 }
