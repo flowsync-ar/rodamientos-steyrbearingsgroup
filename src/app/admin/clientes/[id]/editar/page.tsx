@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { getClientWithScore } from '@/lib/clients/queries'
 import { updateClient } from '@/lib/clients/actions'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound, redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,12 @@ export default async function EditarClientePage({ params }: Props) {
   const { id } = await params
   const client = await getClientWithScore(id)
   if (!client) notFound()
+
+  const admin = createAdminClient()
+  const { data: authUser } = await admin.auth.admin.getUserById(client.profileId)
+  if (!authUser?.user?.email_confirmed_at) {
+    redirect(`/admin/clientes/${id}`)
+  }
 
   async function handleUpdate(formData: FormData) {
     'use server'

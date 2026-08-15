@@ -173,9 +173,9 @@ export default async function ClientesPage({ searchParams }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <ActionTooltip label="Editar">
+                      <ActionTooltip label="Ver cliente">
                         <Link
-                          href={`/admin/clientes/${client.id}/editar`}
+                          href={`/admin/clientes/${client.id}`}
                           className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Pencil className="w-4 h-4" />
