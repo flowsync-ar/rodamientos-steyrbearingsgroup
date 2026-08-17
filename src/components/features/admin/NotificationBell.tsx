@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useVoiceConsultationCount } from '@/lib/voice/realtime'
+import { Trash2 } from 'lucide-react'
 
 type AppRole = 'admin_general' | 'admin_secundario' | 'vendedor' | 'cliente'
 
@@ -52,26 +53,45 @@ function timeAgo(iso: string): string {
 
 export function NotificationBell({ role, initialCount }: NotificationBellProps) {
   const voiceCount = useVoiceConsultationCount(role, initialCount)
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [tab, setTab] = useState<'unread' | 'read'>('unread')
+  const [unread, setUnread] = useState<Notification[]>([])
+  const [read, setRead] = useState<Notification[]>([])
+  const [readLoaded, setReadLoaded] = useState(false)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchUnread = useCallback(async () => {
     try {
-      const res = await fetch('/api/notifications')
+      const res = await fetch('/api/notifications?filter=unread')
       if (!res.ok) return
       const data = await res.json() as { notifications: Notification[] }
-      setNotifications(data.notifications ?? [])
+      setUnread(data.notifications ?? [])
+    } catch {
+      // Non-critical
+    }
+  }, [])
+
+  const fetchRead = useCallback(async () => {
+    try {
+      const res = await fetch('/api/notifications?filter=read')
+      if (!res.ok) return
+      const data = await res.json() as { notifications: Notification[] }
+      setRead(data.notifications ?? [])
+      setReadLoaded(true)
     } catch {
       // Non-critical
     }
   }, [])
 
   useEffect(() => {
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 60_000)
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 60_000)
     return () => clearInterval(interval)
-  }, [fetchNotifications])
+  }, [fetchUnread])
+
+  useEffect(() => {
+    if (tab === 'read' && !readLoaded) fetchRead()
+  }, [tab, readLoaded, fetchRead])
 
   // Close on outside click
   useEffect(() => {
@@ -85,7 +105,9 @@ export function NotificationBell({ role, initialCount }: NotificationBellProps) 
   }, [])
 
   async function markAsRead(id: string) {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    const moved = unread.find((n) => n.id === id)
+    setUnread((prev) => prev.filter((n) => n.id !== id))
+    if (moved) setRead((prev) => [{ ...moved, read: true }, ...prev])
     try {
       await fetch('/api/notifications', {
         method: 'POST',
@@ -97,7 +119,36 @@ export function NotificationBell({ role, initialCount }: NotificationBellProps) 
     }
   }
 
-  const totalCount = voiceCount + notifications.length
+  async function markAllRead() {
+    const moved = unread.map((n) => ({ ...n, read: true }))
+    setUnread([])
+    setRead((prev) => [...moved, ...prev])
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+    } catch {
+      // Non-critical
+    }
+  }
+
+  async function deleteNotification(id: string) {
+    setRead((prev) => prev.filter((n) => n.id !== id))
+    try {
+      await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id }),
+      })
+    } catch {
+      // Non-critical
+    }
+  }
+
+  const totalCount = voiceCount + unread.length
+  const visible = tab === 'unread' ? unread : read
 
   return (
     <div ref={ref} className="relative">
@@ -119,12 +170,10 @@ export function NotificationBell({ role, initialCount }: NotificationBellProps) 
         <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border bg-popover shadow-lg z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b">
             <span className="text-sm font-semibold">Notificaciones</span>
-            {notifications.length > 0 && (
+            {tab === 'unread' && unread.length > 0 && (
               <button
                 type="button"
-                onClick={async () => {
-                  for (const n of notifications) await markAsRead(n.id)
-                }}
+                onClick={markAllRead}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 Marcar todas como leídas
@@ -132,19 +181,44 @@ export function NotificationBell({ role, initialCount }: NotificationBellProps) 
             )}
           </div>
 
+          <div className="flex border-b text-xs">
+            <button
+              type="button"
+              onClick={() => setTab('unread')}
+              className={`flex-1 py-2 font-medium transition-colors ${
+                tab === 'unread'
+                  ? 'text-foreground border-b-2 border-primary -mb-px'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Nuevas{unread.length > 0 ? ` (${unread.length})` : ''}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('read')}
+              className={`flex-1 py-2 font-medium transition-colors ${
+                tab === 'read'
+                  ? 'text-foreground border-b-2 border-primary -mb-px'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Leídas
+            </button>
+          </div>
+
           <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 && voiceCount === 0 ? (
+            {visible.length === 0 && (tab === 'read' || voiceCount === 0) ? (
               <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                Sin notificaciones pendientes
+                {tab === 'unread' ? 'Sin notificaciones nuevas' : 'Sin notificaciones leídas'}
               </p>
             ) : (
               <>
-                {notifications.map((n) => (
+                {visible.map((n) => (
                   <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50 border-b last:border-0">
                     <div className="flex-1 min-w-0">
                       <Link
                         href={getNotificationHref(n)}
-                        onClick={() => { markAsRead(n.id); setOpen(false) }}
+                        onClick={() => { if (tab === 'unread') markAsRead(n.id); setOpen(false) }}
                         className="block"
                       >
                         <p className="text-sm font-medium leading-tight">{n.title}</p>
@@ -152,17 +226,28 @@ export function NotificationBell({ role, initialCount }: NotificationBellProps) 
                         <p className="text-xs text-muted-foreground/60 mt-1">{timeAgo(n.createdAt)}</p>
                       </Link>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => markAsRead(n.id)}
-                      className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5 shrink-0"
-                      aria-label="Marcar como leída"
-                    >
-                      ×
-                    </button>
+                    {tab === 'unread' ? (
+                      <button
+                        type="button"
+                        onClick={() => markAsRead(n.id)}
+                        className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5 shrink-0"
+                        aria-label="Marcar como leída"
+                      >
+                        ×
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => deleteNotification(n.id)}
+                        className="text-muted-foreground/40 hover:text-destructive transition-colors mt-0.5 shrink-0"
+                        aria-label="Eliminar notificación"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
-                {voiceCount > 0 && (
+                {tab === 'unread' && voiceCount > 0 && (
                   <Link
                     href="/admin/consultas"
                     onClick={() => setOpen(false)}
