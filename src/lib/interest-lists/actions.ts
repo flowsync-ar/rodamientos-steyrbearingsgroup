@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
-import { interestListItems, quoteRequests, clients, profiles } from '@/db/schema'
+import { interestLists, interestListItems, quoteRequests, clients, profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import type { ActionResult } from '@/lib/types/action-result'
 import {
@@ -89,14 +89,33 @@ export async function requestQuote(interestListId: string): Promise<ActionResult
 
     // No salesperson is assigned here — that's done from the admin dashboard
     // once the request comes in.
-    const [req] = await db
-      .insert(quoteRequests)
-      .values({
-        interestListId,
-        clientId,
-        status: 'pending',
-      })
-      .returning({ id: quoteRequests.id })
+    //
+    // The requested items are moved into a frozen snapshot list so the
+    // client's cart empties out immediately, while convertQuoteRequest can
+    // still read the exact items that were requested whenever an admin
+    // eventually processes it (which may be much later).
+    const req = await db.transaction(async (tx) => {
+      const [snapshot] = await tx
+        .insert(interestLists)
+        .values({ clientId, name: 'Quote request snapshot' })
+        .returning({ id: interestLists.id })
+
+      await tx
+        .update(interestListItems)
+        .set({ interestListId: snapshot.id })
+        .where(eq(interestListItems.interestListId, interestListId))
+
+      const [created] = await tx
+        .insert(quoteRequests)
+        .values({
+          interestListId: snapshot.id,
+          clientId,
+          status: 'pending',
+        })
+        .returning({ id: quoteRequests.id })
+
+      return created
+    })
 
     const clientRows = await db
       .select({

@@ -131,6 +131,17 @@ export async function getQuoteApprovalLog(quoteId: string) {
     .orderBy(quoteApprovalLog.performedAt)
 }
 
+export async function getPendingQuoteRequestsByClient(clientId: string) {
+  return db
+    .select({
+      id: quoteRequests.id,
+      createdAt: quoteRequests.createdAt,
+    })
+    .from(quoteRequests)
+    .where(and(eq(quoteRequests.clientId, clientId), eq(quoteRequests.status, 'pending')))
+    .orderBy(desc(quoteRequests.createdAt))
+}
+
 export async function getPendingQuoteRequests() {
   return db
     .select({

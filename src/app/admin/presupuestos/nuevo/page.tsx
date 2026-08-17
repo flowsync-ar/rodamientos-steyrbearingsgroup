@@ -252,7 +252,7 @@ export default function NuevoPresupuestoPage() {
             <CardTitle className="text-base">Seleccionar Cliente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="clientSearch">Buscar cliente</Label>
               <div className="flex gap-2">
                 <Input
@@ -334,7 +334,7 @@ export default function NuevoPresupuestoPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Client:{' '}
+                Cliente:{' '}
                 <span className="font-normal">{selectedClient.name}</span>
                 {selectedClient.score !== null && (
                   <span className="ml-2 text-yellow-400">
@@ -356,7 +356,7 @@ export default function NuevoPresupuestoPage() {
               <CardTitle className="text-base">Agregar Productos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="productSearch">Buscar producto</Label>
                 <div className="flex gap-2">
                   <Input

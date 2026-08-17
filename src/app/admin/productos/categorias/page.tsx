@@ -5,6 +5,7 @@ import { getAllCategories } from '@/lib/categories/queries'
 import { deleteCategory } from '@/lib/categories/actions'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
 import {
   Table,
   TableBody,
@@ -61,21 +62,18 @@ export default async function CategoriasPage() {
                   >
                     Editar
                   </Link>
-                  <form
+                  <ConfirmDeleteButton
+                    itemLabel={`la categoría ${cat.name}`}
                     action={async () => {
                       'use server'
                       await deleteCategory(cat.id)
                     }}
-                  >
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      type="submit"
-                      disabled={cat.productCount > 0}
-                    >
-                      Eliminar
-                    </Button>
-                  </form>
+                    trigger={
+                      <Button variant="destructive" size="sm" disabled={cat.productCount > 0}>
+                        Eliminar
+                      </Button>
+                    }
+                  />
                 </div>
               </TableCell>
             </TableRow>

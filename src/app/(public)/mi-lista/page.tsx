@@ -8,14 +8,39 @@ import {
   getInterestListWithItems,
   getClientIdByProfileId,
 } from '@/lib/interest-lists/queries'
-import { removeFromInterestList, updateItemQuantity, requestQuote } from '@/lib/interest-lists/actions'
+import {
+  removeFromInterestList,
+  updateItemQuantity,
+  requestQuote,
+  addToInterestList,
+} from '@/lib/interest-lists/actions'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ShoppingCart, Trash2, Package } from 'lucide-react'
 
-export default async function MiCarritoPage() {
+interface Props {
+  searchParams: Promise<{ addProduct?: string; requestQuote?: string }>
+}
+
+export default async function MiCarritoPage({ searchParams }: Props) {
   const user = await getUser()
   if (!user) redirect('/login?returnUrl=/mi-lista')
+
+  const { addProduct, requestQuote: requestQuoteParam } = await searchParams
+  if (addProduct) {
+    await addToInterestList(addProduct, 1)
+
+    if (requestQuoteParam === 'true') {
+      const directClientId = await getClientIdByProfileId(user.id)
+      const list = directClientId ? await getInterestListWithItems(directClientId) : null
+      if (list) {
+        await requestQuote(list.list.id)
+        redirect('/mis-presupuestos')
+      }
+    }
+
+    redirect('/mi-lista')
+  }
 
   const clientId = await getClientIdByProfileId(user.id)
   if (!clientId) {

@@ -11,6 +11,7 @@ import { getAllCategories } from '@/lib/categories/queries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { requireAdmin } from '@/lib/auth/get-user'
@@ -168,17 +169,18 @@ export default async function PriceListDetailPage({ params }: Props) {
                       {Number(rule.marginPercent).toFixed(2)}%
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <form
+                      <ConfirmDeleteButton
+                        itemLabel={`esta regla de precio (${rule.productName ?? rule.categoryName ?? 'sin destino'})`}
                         action={async () => {
                           'use server'
                           await deletePriceListRule(rule.id)
                         }}
-                        className="inline"
-                      >
-                        <Button type="submit" size="sm" variant="destructive">
-                          Eliminar
-                        </Button>
-                      </form>
+                        trigger={
+                          <Button size="sm" variant="destructive">
+                            Eliminar
+                          </Button>
+                        }
+                      />
                     </td>
                   </tr>
                 ))}

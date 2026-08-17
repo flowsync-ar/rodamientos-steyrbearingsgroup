@@ -14,10 +14,13 @@ export async function getVendedores() {
  * `clientId` is the `clients.id` (not the auth user id).
  */
 export async function getOrCreateInterestList(clientId: string) {
+  // Order by createdAt so the client's original (ongoing) cart is always
+  // returned, even after requestQuote() spins off a frozen snapshot list.
   const existing = await db
     .select()
     .from(interestLists)
     .where(eq(interestLists.clientId, clientId))
+    .orderBy(interestLists.createdAt)
     .limit(1)
 
   if (existing[0]) return existing[0]
@@ -35,6 +38,7 @@ export async function getInterestListWithItems(clientId: string) {
     .select()
     .from(interestLists)
     .where(eq(interestLists.clientId, clientId))
+    .orderBy(interestLists.createdAt)
     .limit(1)
 
   if (!list[0]) return null
@@ -62,6 +66,7 @@ export async function getCartItemCount(clientId: string): Promise<number> {
     .select({ id: interestLists.id })
     .from(interestLists)
     .where(eq(interestLists.clientId, clientId))
+    .orderBy(interestLists.createdAt)
     .limit(1)
 
   if (!list[0]) return 0

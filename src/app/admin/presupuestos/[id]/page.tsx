@@ -21,6 +21,17 @@ const STATUS_COLORS: Record<string, string> = {
   requested: 'bg-purple-100 text-purple-700',
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Pendiente',
+  pending_approval: 'Pendiente aprobación',
+  approved: 'Aprobado',
+  rejected: 'Rechazado',
+  sent: 'Enviado',
+  accepted: 'Aceptado',
+  declined: 'Declinado',
+  requested: 'Solicitado',
+}
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -62,7 +73,7 @@ export default async function PresupuestoDetailPage({ params }: Props) {
           </div>
         </div>
         <Badge className={STATUS_COLORS[quote.status] ?? 'bg-gray-100'}>
-          {quote.status.replace('_', ' ')}
+          {STATUS_LABELS[quote.status] ?? quote.status.replace('_', ' ')}
         </Badge>
       </div>
 

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getQuotesByClient } from '@/lib/quotes/queries'
+import { getQuotesByClient, getPendingQuoteRequestsByClient } from '@/lib/quotes/queries'
 import { getClientIdByProfileId } from '@/lib/interest-lists/queries'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent } from '@/components/ui/card'
@@ -51,7 +51,10 @@ export default async function MisPresupuestosPage() {
     )
   }
 
-  const quotes = await getQuotesByClient(clientId)
+  const [quotes, pendingRequests] = await Promise.all([
+    getQuotesByClient(clientId),
+    getPendingQuoteRequestsByClient(clientId),
+  ])
 
   return (
     <div className="space-y-6">
@@ -62,17 +65,36 @@ export default async function MisPresupuestosPage() {
         </p>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          {quotes.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
+      {pendingRequests.map((req) => (
+        <div
+          key={req.id}
+          className="rounded-lg border bg-purple-50 border-purple-200 px-4 py-3 text-sm text-purple-800"
+        >
+          <span className="font-medium">Presupuesto enviado.</span> Pronto un vendedor se pondrá
+          en contacto con usted.
+          <span className="block text-xs text-purple-600 mt-0.5">
+            Solicitado el {new Date(req.createdAt).toLocaleDateString('es-AR')}
+          </span>
+        </div>
+      ))}
+
+      {quotes.length === 0 && pendingRequests.length === 0 && (
+        <Card>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
               Sin presupuestos aún. Agregá productos a tu{' '}
               <Link href="/mi-lista" className="underline">
                 lista de interés
               </Link>{' '}
               y solicitá un presupuesto.
             </p>
-          ) : (
+          </CardContent>
+        </Card>
+      )}
+
+      {quotes.length > 0 && (
+        <Card>
+          <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
@@ -106,9 +128,9 @@ export default async function MisPresupuestosPage() {
                 ))}
               </tbody>
             </table>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

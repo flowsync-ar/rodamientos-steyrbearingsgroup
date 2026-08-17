@@ -6,8 +6,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import { SearchInput } from '@/components/ui/search-input'
 import Link from 'next/link'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { ActionTooltip } from '@/components/ui/action-tooltip'
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
 import { NormalizeNamesButton } from '@/components/features/clients/NormalizeNamesButton'
 
 interface SearchParams {
@@ -182,19 +183,13 @@ export default async function ClientesPage({ searchParams }: Props) {
                         </Link>
                       </ActionTooltip>
                       <ActionTooltip label="Eliminar">
-                        <form
+                        <ConfirmDeleteButton
+                          itemLabel={`el cliente ${client.razonSocial ?? client.fullName}`}
                           action={async () => {
                             'use server'
                             await deleteClient(client.id)
                           }}
-                        >
-                          <button
-                            type="submit"
-                            className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </form>
+                        />
                       </ActionTooltip>
                     </div>
                   </td>

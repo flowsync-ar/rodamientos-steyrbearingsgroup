@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 import { revalidateClient, deleteClient, activateClientAccount } from '@/lib/clients/actions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Pencil, Trash2 } from 'lucide-react'
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
 import Link from 'next/link'
 import { db } from '@/db'
 import { voiceConsultations } from '@/db/schema'
@@ -314,17 +315,19 @@ export default async function ClienteDetailPage({ params }: Props) {
             Editar cliente
           </span>
         )}
-        <form
+        <ConfirmDeleteButton
+          itemLabel={`el cliente ${client.razonSocial ?? client.fullName}`}
           action={async () => {
             'use server'
             await deleteClient(id)
           }}
-        >
-          <Button type="submit" variant="destructive">
-            <Trash2 className="w-4 h-4" />
-            Eliminar cliente
-          </Button>
-        </form>
+          trigger={
+            <Button variant="destructive">
+              <Trash2 className="w-4 h-4" />
+              Eliminar cliente
+            </Button>
+          }
+        />
       </div>
     </div>
   )

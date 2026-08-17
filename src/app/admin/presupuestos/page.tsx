@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { ActionTooltip } from '@/components/ui/action-tooltip'
-import { Trash2 } from 'lucide-react'
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -205,19 +205,13 @@ export default async function PresupuestosPage({ searchParams }: Props) {
                           Ver
                         </Link>
                         <ActionTooltip label="Eliminar">
-                          <form
+                          <ConfirmDeleteButton
+                            itemLabel={`el presupuesto de ${q.clientName ?? 'este cliente'}`}
                             action={async () => {
                               'use server'
                               await deleteQuote(q.id)
                             }}
-                          >
-                            <button
-                              type="submit"
-                              className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </form>
+                          />
                         </ActionTooltip>
                       </div>
                     </td>

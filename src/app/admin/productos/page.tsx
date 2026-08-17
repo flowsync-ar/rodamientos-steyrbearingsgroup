@@ -11,6 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Pencil, Trash2, Copy } from 'lucide-react'
 import { ActionTooltip } from '@/components/ui/action-tooltip'
+import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
 import { SearchInput } from '@/components/ui/search-input'
 import {
   Table,
@@ -202,21 +203,22 @@ export default async function ProductosPage({ searchParams }: PageProps) {
                         </form>
                       </ActionTooltip>
                       <ActionTooltip label="Borrar">
-                        <form
+                        <ConfirmDeleteButton
+                          itemLabel={`el producto ${p.name}`}
                           action={async () => {
                             'use server'
                             await deleteProduct(p.id)
                           }}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            type="submit"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </form>
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
                       </ActionTooltip>
                     </div>
                   </TableCell>
