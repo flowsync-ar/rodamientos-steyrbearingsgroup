@@ -3,6 +3,8 @@ import { renderQuoteApprovedEmail } from './templates/quote-approved'
 import { renderQuoteSentEmail } from './templates/quote-sent'
 import { renderNewQuoteRequestEmail } from './templates/new-quote-request'
 import { renderCampaignEmail } from './templates/campaign'
+import { renderActivateAccountEmail } from './templates/activate-account'
+import { sendSmtpMail } from './smtp'
 import { db } from '@/db'
 import { quotes, quoteItems, clients, profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -173,6 +175,27 @@ export async function sendCampaignEmail(
     from: FROM_ADDRESS,
     to,
     subject,
+    html,
+  })
+}
+
+/**
+ * Sends the account activation email via SMTP (not Resend, not Supabase's
+ * built-in mailer — that one is rate-limited to a couple sends/hour).
+ * Non-blocking — callers should attach .catch(() => {}).
+ */
+export async function sendActivateAccountEmail(
+  clientEmail: string,
+  activateUrl: string
+): Promise<void> {
+  const html = renderActivateAccountEmail({
+    activateUrl,
+    logoUrl: `${APP_URL}/logo-blanco-email.png`,
+  })
+
+  await sendSmtpMail({
+    to: clientEmail,
+    subject: 'Activá tu cuenta — Steyr Bearing Group',
     html,
   })
 }

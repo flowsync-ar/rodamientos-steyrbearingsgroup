@@ -17,8 +17,6 @@ import Link from 'next/link'
 import { registerClient } from '@/lib/clients/actions'
 import { isValidCuit, formatCuit, normalizeCuit } from '@/lib/utils/cuit'
 
-type Step = 1 | 2 | 3
-
 interface FormData {
   email: string
   password: string
@@ -46,7 +44,6 @@ const EMPTY_FORM: FormData = {
 }
 
 export function RegistrationForm() {
-  const [step, setStep] = useState<Step>(1)
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
   const [afipState, setAfipState] = useState<AfipValidationState>({
     status: 'idle',
@@ -70,6 +67,8 @@ export function RegistrationForm() {
   }
 
   async function validateCuit() {
+    if (!formData.cuit) return
+
     if (!isValidCuit(formData.cuit)) {
       setAfipState({
         status: 'invalid',
@@ -118,9 +117,9 @@ export function RegistrationForm() {
     }
   }
 
-  function validateStep1(): string | null {
+  function validateAll(): string | null {
     if (!formData.email || !formData.password || !formData.confirmPassword) {
-      return 'Todos los campos son obligatorios.'
+      return 'Completá tu email y contraseña.'
     }
     if (formData.password.length < 8) {
       return 'La contraseña debe tener al menos 8 caracteres.'
@@ -128,10 +127,6 @@ export function RegistrationForm() {
     if (formData.password !== formData.confirmPassword) {
       return 'Las contraseñas no coinciden.'
     }
-    return null
-  }
-
-  function validateStep2(): string | null {
     if (!formData.cuit) return 'El CUIT es obligatorio.'
     if (!isValidCuit(formData.cuit)) return 'CUIT inválido.'
     // Only block if AFIP explicitly marked it as inactive
@@ -139,21 +134,14 @@ export function RegistrationForm() {
     return null
   }
 
-  function goToStep2() {
-    const err = validateStep1()
-    if (err) { setFormError(err); return }
-    setFormError(null)
-    setStep(2)
-  }
-
-  function goToStep3() {
-    const err = validateStep2()
-    if (err) { setFormError(err); return }
-    setFormError(null)
-    setStep(3)
-  }
-
   function submit() {
+    const err = validateAll()
+    if (err) {
+      setFormError(err)
+      return
+    }
+    setFormError(null)
+
     startTransition(async () => {
       const result = await registerClient({
         email: formData.email,
@@ -168,7 +156,6 @@ export function RegistrationForm() {
         setSuccess(true)
       } else {
         setFormError(result.error)
-        setStep(result.code === 'INVALID_CUIT' ? 2 : 1)
       }
     })
   }
@@ -197,174 +184,110 @@ export function RegistrationForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Crear cuenta</CardTitle>
-        <CardDescription>
-          Paso {step} de 3 —{' '}
-          {step === 1 ? 'Datos de acceso' : step === 2 ? 'Datos de empresa' : 'Confirmar'}
-        </CardDescription>
+        <CardDescription>Completá tus datos para registrarte.</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Paso 1 — Cuenta */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={(e) => update('email', e.target.value)}
-                placeholder="vos@empresa.com"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <PasswordInput
-                id="password"
-                autoComplete="new-password"
-                minLength={8}
-                value={formData.password}
-                onChange={(e) => update('password', e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-              <PasswordInput
-                id="confirmPassword"
-                autoComplete="new-password"
-                value={formData.confirmPassword}
-                onChange={(e) => update('confirmPassword', e.target.value)}
-                required
-              />
-            </div>
-            {formError && (
-              <p className="text-sm text-destructive">{formError}</p>
-            )}
-            <Button className="w-full" onClick={goToStep2}>
-              Continuar
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              ¿Ya tenés cuenta?{' '}
-              <Link href="/login" className="underline">
-                Iniciá sesión
-              </Link>
-            </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={formData.email}
+              onChange={(e) => update('email', e.target.value)}
+              placeholder="vos@empresa.com"
+              required
+            />
           </div>
-        )}
-
-        {/* Paso 2 — Datos de empresa */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cuit">CUIT</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="cuit"
-                  type="text"
-                  placeholder="20-12345678-9"
-                  value={formData.cuit}
-                  onChange={(e) => handleCuitChange(e.target.value)}
-                  className="flex-1"
-                />
-     
-              </div>
-              {afipState.status === 'valid' && (
-                <p className="text-sm text-green-600">{afipState.message}</p>
-              )}
-              {afipState.status === 'invalid' && (
-                <p className="text-sm text-destructive">{afipState.message}</p>
-              )}
-              {afipState.status === 'degraded' && (
-                <p className="text-sm text-yellow-600">{afipState.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="razonSocial">Razón social / Nombre</Label>
-              <Input
-                id="razonSocial"
-                type="text"
-                value={formData.razonSocial}
-                onChange={(e) => update('razonSocial', e.target.value)}
-                placeholder="Se completa automáticamente desde AFIP"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => update('phone', e.target.value)}
-                placeholder="+54 11 1234-5678"
-              />
-            </div>
-            {formError && (
-              <p className="text-sm text-destructive">{formError}</p>
-            )}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
-                Atrás
-              </Button>
-              <Button onClick={goToStep3} className="flex-1">
-                Continuar
-              </Button>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña</Label>
+            <PasswordInput
+              id="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={formData.password}
+              onChange={(e) => update('password', e.target.value)}
+              required
+            />
           </div>
-        )}
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+            <PasswordInput
+              id="confirmPassword"
+              autoComplete="new-password"
+              value={formData.confirmPassword}
+              onChange={(e) => update('confirmPassword', e.target.value)}
+              required
+            />
+          </div>
 
-        {/* Paso 3 — Confirmación */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <div className="space-y-1 text-sm">
-              <p>
-                <span className="text-muted-foreground">Email:</span>{' '}
-                <span className="font-medium">{formData.email}</span>
-              </p>
-              <p>
-                <span className="text-muted-foreground">CUIT:</span>{' '}
-                <span className="font-medium">{formData.cuit}</span>
-              </p>
-              {formData.razonSocial && (
-                <p>
-                  <span className="text-muted-foreground">Razón social:</span>{' '}
-                  <span className="font-medium">{formData.razonSocial}</span>
-                </p>
-              )}
-              {formData.phone && (
-                <p>
-                  <span className="text-muted-foreground">Teléfono:</span>{' '}
-                  <span className="font-medium">{formData.phone}</span>
-                </p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="cuit">CUIT</Label>
+            <Input
+              id="cuit"
+              type="text"
+              placeholder="20-12345678-9"
+              value={formData.cuit}
+              onChange={(e) => handleCuitChange(e.target.value)}
+              onBlur={validateCuit}
+            />
+            {afipState.status === 'loading' && (
+              <p className="text-sm text-muted-foreground">{afipState.message}</p>
+            )}
+            {afipState.status === 'valid' && (
+              <p className="text-sm text-green-600">{afipState.message}</p>
+            )}
+            {afipState.status === 'invalid' && (
+              <p className="text-sm text-destructive">{afipState.message}</p>
+            )}
             {afipState.status === 'degraded' && (
-              <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-md">
-                La verificación AFIP está pendiente. Vamos a activar tu cuenta una vez que la revisemos.
-              </p>
+              <p className="text-sm text-yellow-600">{afipState.message}</p>
             )}
-            {formError && (
-              <p className="text-sm text-destructive">{formError}</p>
-            )}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setStep(2)}
-                className="flex-1"
-                disabled={isPending}
-              >
-                Atrás
-              </Button>
-              <Button onClick={submit} className="flex-1" disabled={isPending}>
-                {isPending ? 'Creando cuenta…' : 'Crear cuenta'}
-              </Button>
-            </div>
           </div>
-        )}
+          <div className="space-y-2">
+            <Label htmlFor="razonSocial">Razón social / Nombre</Label>
+            <Input
+              id="razonSocial"
+              type="text"
+              value={formData.razonSocial}
+              onChange={(e) => update('razonSocial', e.target.value)}
+              placeholder="Se completa automáticamente desde AFIP"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => update('phone', e.target.value)}
+              placeholder="+54 11 1234-5678"
+            />
+          </div>
+
+          {afipState.status === 'degraded' && (
+            <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-md">
+              La verificación AFIP está pendiente. Vamos a activar tu cuenta una vez que la revisemos.
+            </p>
+          )}
+          {formError && (
+            <p className="text-sm text-destructive">{formError}</p>
+          )}
+
+          <Button className="w-full" onClick={submit} disabled={isPending}>
+            {isPending ? 'Creando cuenta…' : 'Crear cuenta'}
+          </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            ¿Ya tenés cuenta?{' '}
+            <Link href="/login" className="underline">
+              Iniciá sesión
+            </Link>
+          </p>
+        </div>
       </CardContent>
     </Card>
   )
