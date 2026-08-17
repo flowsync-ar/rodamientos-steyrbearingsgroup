@@ -7,6 +7,7 @@ import {
   profiles,
   products,
   quoteRequests,
+  interestListItems,
 } from '@/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
@@ -18,6 +19,7 @@ export async function getQuoteById(id: string) {
     .select({
       // Quote fields
       id: quotes.id,
+      quoteNumber: quotes.quoteNumber,
       status: quotes.status,
       notes: quotes.notes,
       approvedBy: quotes.approvedBy,
@@ -90,6 +92,7 @@ export async function getAllQuotes(opts: GetAllQuotesOptions = {}) {
   const rows = await db
     .select({
       id: quotes.id,
+      quoteNumber: quotes.quoteNumber,
       status: quotes.status,
       notes: quotes.notes,
       createdAt: quotes.createdAt,
@@ -137,14 +140,32 @@ export async function getQuoteApprovalLog(quoteId: string) {
 }
 
 export async function getPendingQuoteRequestsByClient(clientId: string) {
-  return db
+  const requests = await db
     .select({
       id: quoteRequests.id,
+      interestListId: quoteRequests.interestListId,
       createdAt: quoteRequests.createdAt,
     })
     .from(quoteRequests)
     .where(and(eq(quoteRequests.clientId, clientId), eq(quoteRequests.status, 'pending')))
     .orderBy(desc(quoteRequests.createdAt))
+
+  return Promise.all(
+    requests.map(async (req) => {
+      const items = await db
+        .select({
+          id: interestListItems.id,
+          productName: products.name,
+          productSku: products.sku,
+          quantity: interestListItems.quantity,
+        })
+        .from(interestListItems)
+        .innerJoin(products, eq(products.id, interestListItems.productId))
+        .where(eq(interestListItems.interestListId, req.interestListId))
+
+      return { id: req.id, createdAt: req.createdAt, items }
+    })
+  )
 }
 
 export async function getPendingQuoteRequests() {

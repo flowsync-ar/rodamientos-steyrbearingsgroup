@@ -72,9 +72,17 @@ export default async function MisPresupuestosPage() {
         >
           <span className="font-medium">Presupuesto enviado.</span> Pronto un vendedor se pondrá
           en contacto con usted.
-          <span className="block text-xs text-purple-600 mt-0.5">
+          <span className="block text-xs text-purple-600 mt-0.5 mb-2">
             Solicitado el {new Date(req.createdAt).toLocaleDateString('es-AR')}
           </span>
+          <ul className="text-xs text-purple-700 space-y-0.5">
+            {req.items.map((item) => (
+              <li key={item.id}>
+                {item.quantity}× {item.productName}{' '}
+                <span className="font-mono text-purple-500">({item.productSku})</span>
+              </li>
+            ))}
+          </ul>
         </div>
       ))}
 
@@ -98,6 +106,7 @@ export default async function MisPresupuestosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">N°</th>
                   <th className="px-4 py-3 font-medium">Fecha</th>
                   <th className="px-4 py-3 font-medium">Ítems</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
@@ -107,6 +116,7 @@ export default async function MisPresupuestosPage() {
               <tbody>
                 {quotes.map((q) => (
                   <tr key={q.id} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="px-4 py-3 text-muted-foreground font-mono">#{q.quoteNumber}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(q.createdAt).toLocaleDateString('es-AR')}
                     </td>

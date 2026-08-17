@@ -170,6 +170,7 @@ export default async function PresupuestosPage({ searchParams }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">N°</th>
                   <th className="px-4 py-3 font-medium">Cliente</th>
                   <th className="px-4 py-3 font-medium">Vendedor</th>
                   <th className="px-4 py-3 font-medium">Fecha</th>
@@ -182,6 +183,7 @@ export default async function PresupuestosPage({ searchParams }: Props) {
               <tbody>
                 {displayedQuotes.map((q) => (
                   <tr key={q.id} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="px-4 py-3 text-muted-foreground font-mono">#{q.quoteNumber}</td>
                     <td className="px-4 py-3 font-medium">{q.clientName ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{q.salespersonName}</td>
                     <td className="px-4 py-3 text-muted-foreground">

@@ -72,7 +72,7 @@ export default async function PresupuestoDetailPage({ params }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">
-            Presupuesto — {quote.clientName ?? 'Cliente desconocido'}
+            Presupuesto #{quote.quoteNumber} — {quote.clientName ?? 'Cliente desconocido'}
           </h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
             <span>Vendedor: {quote.salespersonName}</span>

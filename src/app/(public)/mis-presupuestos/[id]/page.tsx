@@ -46,7 +46,7 @@ export default async function MiPresupuestoDetailPage({ params }: Props) {
       </div>
 
       <div className="flex items-start justify-between">
-        <h1 className="text-2xl font-bold">Detalle del Presupuesto</h1>
+        <h1 className="text-2xl font-bold">Presupuesto #{quote.quoteNumber}</h1>
         <Badge
           className={
             quote.status === 'sent'

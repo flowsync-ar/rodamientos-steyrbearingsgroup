@@ -81,7 +81,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{myDraft}</p>
-              <Badge className="mt-1 bg-gray-100 text-gray-700 text-xs">draft</Badge>
+              <Badge className="mt-1 bg-gray-100 text-gray-700 text-xs">Borrador</Badge>
             </CardContent>
           </Card>
           <Card>
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{myPending}</p>
-              <Badge className="mt-1 bg-yellow-100 text-yellow-700 text-xs">pendiente aprobación</Badge>
+              <Badge className="mt-1 bg-yellow-100 text-yellow-700 text-xs">Pendiente aprobación</Badge>
             </CardContent>
           </Card>
           <Card>

@@ -102,24 +102,17 @@ export default async function MiCarritoPage({ searchParams }: Props) {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{item.productName}</p>
                 <p className="text-xs font-mono text-muted-foreground">{item.productSku}</p>
-                <form
-                  action={async (fd: FormData) => {
-                    'use server'
-                    const qty = Number(fd.get('quantity'))
-                    if (!isNaN(qty) && qty >= 1) await updateItemQuantity(item.id, qty)
-                  }}
-                  className="flex items-center gap-2 mt-2"
-                >
+                <div className="flex items-center gap-2 mt-2">
                   <label className="text-xs text-muted-foreground">Cant.:</label>
                   <Input
-                    name="quantity"
+                    name={`qty_${item.id}`}
+                    form="confirm-order-form"
                     type="number"
                     min="1"
                     defaultValue={item.quantity}
                     className="w-16 h-7 text-xs"
                   />
-                  <Button type="submit" size="xs" variant="outline">Actualizar</Button>
-                </form>
+                </div>
               </div>
 
               {/* Remove */}
@@ -146,8 +139,17 @@ export default async function MiCarritoPage({ searchParams }: Props) {
         </h2>
 
         <form
-          action={async () => {
+          id="confirm-order-form"
+          action={async (fd: FormData) => {
             'use server'
+            await Promise.all(
+              items.map((item) => {
+                const qty = Number(fd.get(`qty_${item.id}`))
+                if (!Number.isNaN(qty) && qty >= 1 && qty !== item.quantity) {
+                  return updateItemQuantity(item.id, qty)
+                }
+              })
+            )
             await requestQuote(list.id)
             redirect('/mis-presupuestos')
           }}

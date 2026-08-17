@@ -5,6 +5,7 @@ import {
   timestamp,
   decimal,
   integer,
+  serial,
   pgEnum,
 } from 'drizzle-orm/pg-core'
 import { clients } from './clients'
@@ -43,6 +44,7 @@ export const priceListRules = pgTable('price_list_rules', {
 
 export const quotes = pgTable('quotes', {
   id: uuid('id').primaryKey().defaultRandom(),
+  quoteNumber: serial('quote_number').notNull().unique(),
   clientId: uuid('client_id')
     .notNull()
     .references(() => clients.id),
