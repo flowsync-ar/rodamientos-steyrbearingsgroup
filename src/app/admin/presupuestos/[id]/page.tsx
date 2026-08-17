@@ -32,6 +32,13 @@ const STATUS_LABELS: Record<string, string> = {
   requested: 'Solicitado',
 }
 
+const ACTION_LABELS: Record<string, string> = {
+  submitted: 'Enviado a aprobación',
+  approved: 'Aprobado',
+  rejected: 'Rechazado',
+  sent: 'Enviado al cliente',
+}
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -236,12 +243,14 @@ export default async function PresupuestoDetailPage({ params }: Props) {
                 <li key={entry.id} className="relative">
                   <div className="absolute -left-[1.625rem] top-1 h-3 w-3 rounded-full border-2 border-background bg-primary" />
                   <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-medium capitalize">
-                      {entry.action.replace('_', ' ')}
+                    <span className="text-sm font-medium">
+                      {ACTION_LABELS[entry.action] ?? entry.action}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      by {entry.actorName} —{' '}
-                      {new Date(entry.performedAt).toLocaleString('es-AR')}
+                      por {entry.actorName} —{' '}
+                      {new Date(entry.performedAt).toLocaleString('es-AR', {
+                        hour12: false,
+                      })}
                     </span>
                   </div>
                   {entry.notes && (
