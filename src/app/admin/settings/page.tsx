@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Building2, Bell, Star } from 'lucide-react'
+import { Building2, Bell, Star, UserCog } from 'lucide-react'
 
 const sections = [
   {
@@ -7,6 +7,12 @@ const sections = [
     icon: Building2,
     title: 'Empresa',
     description: 'Nombre, CUIT, contacto, dirección y redes sociales.',
+  },
+  {
+    href: '/admin/settings/vendedores',
+    icon: UserCog,
+    title: 'Vendedores',
+    description: 'Creá y gestioná las cuentas de tu equipo de ventas.',
   },
   {
     href: '/admin/settings/alertas',
