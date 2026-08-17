@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { getQuoteById, getQuoteApprovalLog } from '@/lib/quotes/queries'
-import { approveQuote, rejectQuote, sendQuoteToClient } from '@/lib/quotes/actions'
+import { approveQuote, rejectQuote, sendQuoteToClient, submitQuoteForApproval } from '@/lib/quotes/actions'
 import { getUser } from '@/lib/auth/get-user'
 import { canApproveQuotes } from '@/lib/auth/roles'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -56,6 +56,7 @@ export default async function PresupuestoDetailPage({ params }: Props) {
   if (!quote) notFound()
 
   const canApprove = canApproveQuotes(user.role)
+  const isDraft = quote.status === 'draft'
   const isPendingApproval = quote.status === 'pending_approval'
   const isApproved = quote.status === 'approved'
 
@@ -146,6 +147,32 @@ export default async function PresupuestoDetailPage({ params }: Props) {
           </CardHeader>
           <CardContent>
             <p className="text-sm">{quote.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Submit draft for approval */}
+      {isDraft && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Borrador</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-3">
+            <form
+              action={async () => {
+                'use server'
+                await submitQuoteForApproval(id)
+              }}
+            >
+              <Button type="submit" disabled={quote.items.length === 0}>
+                Enviar a aprobación
+              </Button>
+            </form>
+            {quote.items.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Agregá al menos un producto antes de enviarlo.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
