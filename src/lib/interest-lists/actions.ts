@@ -11,10 +11,6 @@ import {
   getInterestListWithItems,
 } from './queries'
 import { getUser } from '@/lib/auth/get-user'
-import {
-  sendNewQuoteRequestEmail,
-  getSalespersonEmail,
-} from '@/lib/email/send'
 import { notify } from '@/lib/notifications'
 
 async function getAuthClientId(): Promise<string | null> {
@@ -80,7 +76,7 @@ export async function updateItemQuantity(
   }
 }
 
-export async function requestQuote(interestListId: string, vendedorId?: string): Promise<ActionResult<{ requestId: string }>> {
+export async function requestQuote(interestListId: string): Promise<ActionResult<{ requestId: string }>> {
   try {
     const clientId = await getAuthClientId()
     if (!clientId) return { success: false, error: 'Autenticación requerida', code: 'UNAUTHENTICATED' }
@@ -91,17 +87,17 @@ export async function requestQuote(interestListId: string, vendedorId?: string):
       return { success: false, error: 'Tu carrito está vacío' }
     }
 
+    // No salesperson is assigned here — that's done from the admin dashboard
+    // once the request comes in.
     const [req] = await db
       .insert(quoteRequests)
       .values({
         interestListId,
         clientId,
-        assignedTo: vendedorId ?? null,
         status: 'pending',
       })
       .returning({ id: quoteRequests.id })
 
-    // Notify assigned salesperson — non-blocking
     const clientRows = await db
       .select({
         razonSocial: clients.razonSocial,
@@ -113,17 +109,6 @@ export async function requestQuote(interestListId: string, vendedorId?: string):
 
     const clientName = clientRows[0]?.razonSocial ?? 'Client'
     const productCount = listWithItems.items.length
-
-    const salespersonId = vendedorId ?? null
-    if (salespersonId) {
-      getSalespersonEmail(salespersonId)
-        .then((email) => {
-          if (email) {
-            sendNewQuoteRequestEmail(email, clientName, productCount).catch(() => {})
-          }
-        })
-        .catch(() => {})
-    }
 
     // In-app notification — fire-and-forget
     notify('new_quote_request', {

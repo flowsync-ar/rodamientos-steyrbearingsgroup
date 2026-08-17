@@ -197,6 +197,32 @@ export async function removeQuoteItem(itemId: string): Promise<ActionResult<void
   }
 }
 
+export async function deleteQuote(quoteId: string): Promise<ActionResult<void>> {
+  try {
+    const user = await getUser()
+    if (!user) return { success: false, error: 'No autorizado', code: 'UNAUTHENTICATED' }
+
+    const rows = await db
+      .select({ id: quotes.id })
+      .from(quotes)
+      .where(eq(quotes.id, quoteId))
+      .limit(1)
+
+    if (!rows[0]) return { success: false, error: 'Presupuesto no encontrado', code: 'NOT_FOUND' }
+
+    // quote_items and quote_approval_log cascade from quotes
+    await db.delete(quotes).where(eq(quotes.id, quoteId))
+
+    revalidatePath('/admin/presupuestos')
+    return { success: true, data: undefined }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'No se pudo eliminar el presupuesto',
+    }
+  }
+}
+
 export async function updateQuoteNotes(
   quoteId: string,
   notes: string

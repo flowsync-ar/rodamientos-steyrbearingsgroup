@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface ClientOption {
@@ -46,11 +47,15 @@ export default function NuevoPresupuestoPage() {
 
   // Step 1: client selection
   const [clientSearch, setClientSearch] = useState('')
+  const [clientResults, setClientResults] = useState<ClientOption[]>([])
+  const [clientSearchLoading, setClientSearchLoading] = useState(false)
   const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null)
   const [quoteId, setQuoteId] = useState<string | null>(null)
 
   // Step 2: products
   const [productSearch, setProductSearch] = useState('')
+  const [productResults, setProductResults] = useState<ProductOption[]>([])
+  const [productSearchLoading, setProductSearchLoading] = useState(false)
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([])
 
   // Step 3: notes
@@ -92,6 +97,38 @@ export default function NuevoPresupuestoPage() {
       irrecuperable: 'bg-red-100 text-red-700',
     }
     return colors[level] ?? 'bg-gray-100 text-gray-700'
+  }
+
+  async function handleClientSearch() {
+    if (!clientSearch.trim()) {
+      setClientResults([])
+      return
+    }
+    setClientSearchLoading(true)
+    try {
+      const res = await fetch(`/api/clients/search?q=${encodeURIComponent(clientSearch)}`)
+      const data = await res.json()
+      const results: Array<{ id: string; name: string; bcraRiskLevel: string | null }> =
+        data.clients ?? []
+      setClientResults(results.map((c) => ({ ...c, score: null })))
+    } finally {
+      setClientSearchLoading(false)
+    }
+  }
+
+  async function handleProductSearch() {
+    if (!productSearch.trim()) {
+      setProductResults([])
+      return
+    }
+    setProductSearchLoading(true)
+    try {
+      const res = await fetch(`/api/products/search?q=${encodeURIComponent(productSearch)}`)
+      const data = await res.json()
+      setProductResults(data.products ?? [])
+    } finally {
+      setProductSearchLoading(false)
+    }
   }
 
   async function handleSelectClient(client: ClientOption) {
@@ -217,17 +254,54 @@ export default function NuevoPresupuestoPage() {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="clientSearch">Buscar cliente</Label>
-              <Input
-                id="clientSearch"
-                value={clientSearch}
-                onChange={(e) => setClientSearch(e.target.value)}
-                placeholder="Razón social o CUIT..."
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="clientSearch"
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleClientSearch()
+                    }
+                  }}
+                  placeholder="Nombre, razón social o CUIT..."
+                />
+                <Button type="button" onClick={handleClientSearch} disabled={clientSearchLoading}>
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Escribí para buscar clientes. Los resultados se traen del servidor.
-              {/* In production: fetch /api/clients?q=clientSearch and display results */}
-            </p>
+
+            {clientSearchLoading && (
+              <p className="text-sm text-muted-foreground">Buscando...</p>
+            )}
+
+            {!clientSearchLoading && clientResults.length > 0 && (
+              <div className="border rounded-md divide-y">
+                {clientResults.map((client) => (
+                  <button
+                    key={client.id}
+                    type="button"
+                    onClick={() => handleSelectClient(client)}
+                    disabled={isPending}
+                    className="w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-center justify-between gap-3"
+                  >
+                    <span className="font-medium">{client.name}</span>
+                    {client.bcraRiskLevel && (
+                      <Badge className={`text-xs ${getBcraColor(client.bcraRiskLevel)}`}>
+                        BCRA: {client.bcraRiskLevel}
+                      </Badge>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!clientSearchLoading && clientSearch.trim() && clientResults.length === 0 && (
+              <p className="text-sm text-muted-foreground">No se encontraron clientes.</p>
+            )}
+
             {/* Demo: manual client ID entry for now */}
             <div className="border rounded-md p-4 space-y-3">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
@@ -284,13 +358,50 @@ export default function NuevoPresupuestoPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="productSearch">Buscar producto</Label>
-                <Input
-                  id="productSearch"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Nombre del producto o SKU..."
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="productSearch"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleProductSearch()
+                      }
+                    }}
+                    placeholder="Nombre del producto o SKU..."
+                  />
+                  <Button type="button" onClick={handleProductSearch} disabled={productSearchLoading}>
+                    <Search className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
+
+              {productSearchLoading && (
+                <p className="text-sm text-muted-foreground">Buscando...</p>
+              )}
+
+              {!productSearchLoading && productResults.length > 0 && (
+                <div className="border rounded-md divide-y">
+                  {productResults.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => handleAddProduct(product)}
+                      disabled={isPending}
+                      className="w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-center justify-between gap-3"
+                    >
+                      <span className="font-medium">{product.name}</span>
+                      <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!productSearchLoading && productSearch.trim() && productResults.length === 0 && (
+                <p className="text-sm text-muted-foreground">No se encontraron productos.</p>
+              )}
+
               {/* Demo shortcut */}
               <div className="border rounded-md p-4 space-y-3">
                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">

@@ -1,7 +1,14 @@
 'use server'
 
 import { db } from '@/db'
-import { clients, profiles } from '@/db/schema'
+import {
+  clients,
+  profiles,
+  quotes,
+  quoteRequests,
+  campaignRecipients,
+  voiceConsultations,
+} from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import { validateCuitAfip } from '@/lib/afip/index'
@@ -130,6 +137,24 @@ export async function registerClient(
       clientId: client.id,
       clientName: fullName,
     }).catch(() => null)
+
+    // Step 8: send account activation email
+    // admin.createUser() does not trigger Supabase's built-in confirmation
+    // email, so we explicitly resend it — this uses Supabase's own email
+    // sending (no Resend dependency for this one).
+    const supabaseAnon = await createSupabaseClient()
+    supabaseAnon.auth
+      .resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm` },
+      })
+      .then(({ error }) => {
+        if (error) console.error('[EMAIL] Failed to send activation email:', error)
+      })
+      .catch((err) => {
+        console.error('[EMAIL] Failed to send activation email:', err)
+      })
 
     return {
       success: true,
@@ -410,9 +435,18 @@ export async function deleteClient(clientId: string): Promise<void> {
 
   const { profileId } = rows[0]
 
-  // Delete DB rows first (clients cascades from profiles)
-  await db.delete(clients).where(eq(clients.id, clientId))
-  await db.delete(profiles).where(eq(profiles.id, profileId))
+  // Rows referencing clients.id without ON DELETE CASCADE must be removed
+  // explicitly first, or the delete below fails with a foreign key violation.
+  // (quote_items/quote_approval_log cascade from quotes; interest_list_items
+  // and client scores/alerts already cascade from clients.)
+  await db.transaction(async (tx) => {
+    await tx.delete(quoteRequests).where(eq(quoteRequests.clientId, clientId))
+    await tx.delete(quotes).where(eq(quotes.clientId, clientId))
+    await tx.delete(campaignRecipients).where(eq(campaignRecipients.clientId, clientId))
+    await tx.delete(voiceConsultations).where(eq(voiceConsultations.clientId, clientId))
+    await tx.delete(clients).where(eq(clients.id, clientId))
+    await tx.delete(profiles).where(eq(profiles.id, profileId))
+  })
 
   // Then delete the auth user
   const adminSupabase = createAdminClient()

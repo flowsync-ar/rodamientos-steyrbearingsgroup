@@ -38,7 +38,8 @@ export async function getAllClients(options: GetAllClientsOptions = {}) {
     conditions.push(
       or(
         ilike(clients.razonSocial, `%${search}%`),
-        ilike(clients.cuit, `%${search}%`)
+        ilike(clients.cuit, `%${search}%`),
+        ilike(profiles.fullName, `%${search}%`)
       )
     )
   }

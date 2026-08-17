@@ -7,7 +7,6 @@ import { getUser } from '@/lib/auth/get-user'
 import {
   getInterestListWithItems,
   getClientIdByProfileId,
-  getVendedores,
 } from '@/lib/interest-lists/queries'
 import { removeFromInterestList, updateItemQuantity, requestQuote } from '@/lib/interest-lists/actions'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -28,10 +27,7 @@ export default async function MiCarritoPage() {
     )
   }
 
-  const [data, vendedores] = await Promise.all([
-    getInterestListWithItems(clientId),
-    getVendedores(),
-  ])
+  const data = await getInterestListWithItems(clientId)
 
   if (!data || data.items.length === 0) {
     return (
@@ -125,36 +121,14 @@ export default async function MiCarritoPage() {
         </h2>
 
         <form
-          action={async (fd: FormData) => {
+          action={async () => {
             'use server'
-            const vendedorId = fd.get('vendedorId')?.toString() || undefined
-            await requestQuote(list.id, vendedorId)
+            await requestQuote(list.id)
             redirect('/mis-presupuestos')
           }}
           className="space-y-4"
         >
-          <div className="space-y-1.5">
-            <label htmlFor="vendedorId" className="text-sm font-medium">
-              Asignar vendedor <span className="text-muted-foreground font-normal">(opcional)</span>
-            </label>
-            <select
-              id="vendedorId"
-              name="vendedorId"
-              className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              <option value="">— Sin preferencia —</option>
-              {vendedores.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.fullName}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground">
-              Si no seleccionás uno, el pedido queda disponible para cualquier vendedor.
-            </p>
-          </div>
-
-          <div className="border-t pt-4 flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
               {items.length} {items.length === 1 ? 'producto' : 'productos'} en el pedido
             </div>

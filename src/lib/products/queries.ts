@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { products, categories } from '@/db/schema'
-import { eq, ilike, and, asc, desc, sql } from 'drizzle-orm'
+import { eq, ilike, and, or, asc, desc, sql } from 'drizzle-orm'
 
 interface GetAllProductsOptions {
   categoryId?: string
@@ -16,7 +16,14 @@ export async function getAllProducts(opts: GetAllProductsOptions = {}) {
 
   const conditions = []
   if (categoryId) conditions.push(eq(products.categoryId, categoryId))
-  if (search) conditions.push(ilike(products.name, `%${search}%`))
+  if (search) {
+    conditions.push(
+      or(
+        ilike(products.name, `%${search}%`),
+        ilike(products.sku, `%${search}%`)
+      )
+    )
+  }
   if (active !== undefined) conditions.push(eq(products.active, active))
 
   const where = conditions.length > 0 ? and(...conditions) : undefined

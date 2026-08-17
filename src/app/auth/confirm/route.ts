@@ -22,5 +22,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=reset-link-invalid`)
   }
 
-  return NextResponse.redirect(`${origin}/reset-password`)
+  if (type === 'recovery') {
+    return NextResponse.redirect(`${origin}/reset-password`)
+  }
+
+  return NextResponse.redirect(`${origin}/login?success=account-activated`)
 }

@@ -1,12 +1,14 @@
 export const dynamic = 'force-dynamic'
 
 import { getAllQuotes, getPendingQuoteRequests } from '@/lib/quotes/queries'
-import { convertQuoteRequest } from '@/lib/quotes/actions'
+import { convertQuoteRequest, deleteQuote } from '@/lib/quotes/actions'
 import { getUser } from '@/lib/auth/get-user'
 import { isAdmin } from '@/lib/auth/roles'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { ActionTooltip } from '@/components/ui/action-tooltip'
+import { Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -195,12 +197,29 @@ export default async function PresupuestosPage({ searchParams }: Props) {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/presupuestos/${q.id}`}
-                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                      >
-                        Ver
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/presupuestos/${q.id}`}
+                          className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                        >
+                          Ver
+                        </Link>
+                        <ActionTooltip label="Eliminar">
+                          <form
+                            action={async () => {
+                              'use server'
+                              await deleteQuote(q.id)
+                            }}
+                          >
+                            <button
+                              type="submit"
+                              className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </form>
+                        </ActionTooltip>
+                      </div>
                     </td>
                   </tr>
                 ))}

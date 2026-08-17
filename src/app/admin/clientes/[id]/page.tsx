@@ -8,7 +8,6 @@ import { notFound } from 'next/navigation'
 import { revalidateClient, deleteClient, activateClientAccount } from '@/lib/clients/actions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Pencil, Trash2 } from 'lucide-react'
-import { ActionTooltip } from '@/components/ui/action-tooltip'
 import Link from 'next/link'
 import { db } from '@/db'
 import { voiceConsultations } from '@/db/schema'
@@ -114,31 +113,6 @@ export default async function ClienteDetailPage({ params }: Props) {
         <Link href="/admin/clientes" className="text-sm text-muted-foreground hover:underline">
           ← Clientes
         </Link>
-        <div className="flex gap-2">
-          <ActionTooltip label="Editar">
-            <Link
-              href={`/admin/clientes/${id}/editar`}
-              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Pencil className="w-4 h-4" />
-            </Link>
-          </ActionTooltip>
-          <ActionTooltip label="Eliminar">
-            <form
-              action={async () => {
-                'use server'
-                await deleteClient(id)
-              }}
-            >
-              <button
-                type="submit"
-                className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </form>
-          </ActionTooltip>
-        </div>
       </div>
 
       <div className="flex items-start justify-between gap-4">
@@ -320,6 +294,38 @@ export default async function ClienteDetailPage({ params }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3">
+        {emailConfirmed ? (
+          <Link
+            href={`/admin/clientes/${id}/editar`}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]"
+          >
+            <Pencil className="w-4 h-4" />
+            Editar cliente
+          </Link>
+        ) : (
+          <span
+            title="Activá la cuenta para poder editar los datos del cliente"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground opacity-50 cursor-not-allowed"
+          >
+            <Pencil className="w-4 h-4" />
+            Editar cliente
+          </span>
+        )}
+        <form
+          action={async () => {
+            'use server'
+            await deleteClient(id)
+          }}
+        >
+          <Button type="submit" variant="destructive">
+            <Trash2 className="w-4 h-4" />
+            Eliminar cliente
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }
