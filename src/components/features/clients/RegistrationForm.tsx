@@ -43,7 +43,11 @@ const EMPTY_FORM: FormData = {
   companyName: '',
 }
 
-export function RegistrationForm() {
+interface RegistrationFormProps {
+  onSuccess?: () => void
+}
+
+export function RegistrationForm({ onSuccess }: RegistrationFormProps = {}) {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
   const [afipState, setAfipState] = useState<AfipValidationState>({
     status: 'idle',
@@ -154,6 +158,7 @@ export function RegistrationForm() {
 
       if (result.success) {
         setSuccess(true)
+        onSuccess?.()
       } else {
         setFormError(result.error)
       }
