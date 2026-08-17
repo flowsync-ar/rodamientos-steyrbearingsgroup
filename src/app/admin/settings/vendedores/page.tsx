@@ -4,13 +4,14 @@ import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth/get-user'
 import { canAccessSettings } from '@/lib/auth/roles'
 import { getAllVendedores } from '@/lib/staff/queries'
-import { createVendedor, deleteVendedor, resetVendedorPassword } from '@/lib/staff/actions'
+import { createVendedor, deleteVendedor } from '@/lib/staff/actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ActionTooltip } from '@/components/ui/action-tooltip'
 import { ConfirmDeleteButton } from '@/components/ui/confirm-delete-button'
+import { ResetPasswordButton } from '@/components/features/staff/ResetPasswordButton'
 import { Pencil, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 
@@ -120,20 +121,17 @@ export default async function VendedoresSettingsPage({ searchParams }: Props) {
                           </Link>
                         </ActionTooltip>
                         <ActionTooltip label="Blanquear contraseña">
-                          <form
-                            action={async () => {
-                              'use server'
-                              if (v.email) await resetVendedorPassword(v.id, v.email, v.fullName)
-                            }}
-                          >
+                          {v.email ? (
+                            <ResetPasswordButton vendedorId={v.id} email={v.email} fullName={v.fullName} />
+                          ) : (
                             <button
-                              type="submit"
-                              disabled={!v.email}
-                              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                              type="button"
+                              disabled
+                              className="p-1.5 rounded text-muted-foreground opacity-40"
                             >
                               <KeyRound className="w-4 h-4" />
                             </button>
-                          </form>
+                          )}
                         </ActionTooltip>
                         <ActionTooltip label="Eliminar">
                           <ConfirmDeleteButton
