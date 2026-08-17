@@ -10,6 +10,7 @@ import {
   clients,
   quoteRequests,
   interestListItems,
+  paymentMethodEnum,
 } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import type { ActionResult } from '@/lib/types/action-result'
@@ -17,6 +18,7 @@ import { getUser, requireAdmin } from '@/lib/auth/get-user'
 import { canApproveQuotes } from '@/lib/auth/roles'
 import { getEffectiveMargin } from '@/lib/pricing/queries'
 import { getProductById } from '@/lib/products/queries'
+import { getClientIdByProfileId } from '@/lib/interest-lists/queries'
 import { getQuoteApprovalLog } from './queries'
 import {
   sendQuoteApprovedEmail,
@@ -456,6 +458,56 @@ export async function clientAcceptQuote(quoteId: string): Promise<ActionResult<v
     return {
       success: false,
       error: err instanceof Error ? err.message : 'No se pudo aceptar el presupuesto',
+    }
+  }
+}
+
+export async function payQuote(
+  quoteId: string,
+  paymentMethod: string
+): Promise<ActionResult<void>> {
+  try {
+    const user = await getUser()
+    if (!user) return { success: false, error: 'No autorizado', code: 'UNAUTHENTICATED' }
+
+    const clientId = await getClientIdByProfileId(user.id)
+    if (!clientId) return { success: false, error: 'No autorizado', code: 'UNAUTHENTICATED' }
+
+    if (!paymentMethodEnum.enumValues.includes(paymentMethod as (typeof paymentMethodEnum.enumValues)[number])) {
+      return { success: false, error: 'Forma de pago inválida' }
+    }
+
+    const rows = await db
+      .select({ id: quotes.id, clientId: quotes.clientId, status: quotes.status })
+      .from(quotes)
+      .where(eq(quotes.id, quoteId))
+      .limit(1)
+
+    const quote = rows[0]
+    if (!quote || quote.clientId !== clientId) {
+      return { success: false, error: 'Presupuesto no encontrado', code: 'NOT_FOUND' }
+    }
+    if (quote.status !== 'accepted') {
+      return { success: false, error: 'Solo se pueden pagar presupuestos aceptados' }
+    }
+
+    await db
+      .update(quotes)
+      .set({
+        paymentMethod: paymentMethod as (typeof paymentMethodEnum.enumValues)[number],
+        paidAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(quotes.id, quoteId))
+
+    revalidatePath('/mis-presupuestos')
+    revalidatePath(`/mis-presupuestos/${quoteId}`)
+    revalidatePath('/mis-compras')
+    return { success: true, data: undefined }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'No se pudo registrar el pago',
     }
   }
 }

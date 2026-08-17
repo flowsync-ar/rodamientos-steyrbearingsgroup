@@ -23,6 +23,13 @@ export const quoteStatusEnum = pgEnum('quote_status', [
   'declined',
 ])
 
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'transferencia',
+  'efectivo',
+  'cheque',
+  'tarjeta',
+])
+
 export const priceLists = pgTable('price_lists', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
@@ -55,6 +62,8 @@ export const quotes = pgTable('quotes', {
   notes: text('notes'),
   approvedBy: uuid('approved_by').references(() => profiles.id),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
+  paymentMethod: paymentMethodEnum('payment_method'),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

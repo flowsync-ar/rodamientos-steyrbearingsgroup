@@ -30,16 +30,18 @@ export default function ForgotPasswordPage() {
         />
         <div>
           <CardTitle>¿Olvidaste tu contraseña?</CardTitle>
-          <CardDescription className="mt-1">
-            Ingresá tu email y te enviamos un link para restablecerla.
-          </CardDescription>
+          {!state?.success && (
+            <CardDescription className="mt-1">
+              Ingresá tu email y te enviamos un link para restablecerla.
+            </CardDescription>
+          )}
         </div>
       </CardHeader>
       <CardContent>
         {state?.success ? (
           <p className="text-sm text-muted-foreground text-center">
-            Si el email existe en nuestro sistema, te enviamos un link para restablecer tu
-            contraseña.
+            Revisá tu casilla de email: si la dirección está registrada, vas a recibir un
+            link para crear una nueva contraseña. No te olvides de mirar la carpeta de spam.
           </p>
         ) : (
           <form action={action} className="space-y-4">

@@ -7,8 +7,16 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { PayQuoteForm } from '@/components/features/quotes/PayQuoteForm'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  transferencia: 'Transferencia',
+  efectivo: 'Efectivo',
+  cheque: 'Cheque',
+  tarjeta: 'Tarjeta',
+}
 
 interface Props {
   params: Promise<{ id: string }>
@@ -169,6 +177,30 @@ export default async function MiPresupuestoDetailPage({ params }: Props) {
             >
               Descargar PDF
             </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment */}
+      {quote.status === 'accepted' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Pago</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {quote.paidAt ? (
+              <p className="text-sm text-muted-foreground">
+                Pagado el {new Date(quote.paidAt).toLocaleDateString('es-AR')} vía{' '}
+                <span className="font-medium text-foreground">
+                  {PAYMENT_METHOD_LABELS[quote.paymentMethod ?? ''] ?? quote.paymentMethod}
+                </span>
+                .
+              </p>
+            ) : (
+              <div className="flex justify-end">
+                <PayQuoteForm quoteId={id} />
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

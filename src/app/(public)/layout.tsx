@@ -58,6 +58,12 @@ export default async function PublicLayout({ children }: { children: ReactNode }
                 >
                   Mis presupuestos
                 </Link>
+                <Link
+                  href="/mis-compras"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Mis compras
+                </Link>
                 <form action={signOut}>
                   <button
                     type="submit"

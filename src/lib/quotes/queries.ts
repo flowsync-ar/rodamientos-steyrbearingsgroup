@@ -9,7 +9,7 @@ import {
   quoteRequests,
   interestListItems,
 } from '@/db/schema'
-import { eq, and, desc, sql } from 'drizzle-orm'
+import { eq, and, desc, sql, isNotNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 
 const clientProfiles = alias(profiles, 'client_profiles')
@@ -24,6 +24,8 @@ export async function getQuoteById(id: string) {
       notes: quotes.notes,
       approvedBy: quotes.approvedBy,
       approvedAt: quotes.approvedAt,
+      paymentMethod: quotes.paymentMethod,
+      paidAt: quotes.paidAt,
       createdAt: quotes.createdAt,
       updatedAt: quotes.updatedAt,
       // Client
@@ -74,18 +76,20 @@ export interface GetAllQuotesOptions {
   status?: string
   salesPersonId?: string
   clientId?: string
+  paidOnly?: boolean
   page?: number
   pageSize?: number
 }
 
 export async function getAllQuotes(opts: GetAllQuotesOptions = {}) {
-  const { status, salesPersonId, clientId, page = 1, pageSize = 20 } = opts
+  const { status, salesPersonId, clientId, paidOnly, page = 1, pageSize = 20 } = opts
   const offset = (page - 1) * pageSize
 
   const conditions = []
   if (status) conditions.push(eq(quotes.status, status as typeof quotes.status._.data))
   if (salesPersonId) conditions.push(eq(quotes.salespersonId, salesPersonId))
   if (clientId) conditions.push(eq(quotes.clientId, clientId))
+  if (paidOnly) conditions.push(isNotNull(quotes.paidAt))
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
 
@@ -95,6 +99,8 @@ export async function getAllQuotes(opts: GetAllQuotesOptions = {}) {
       quoteNumber: quotes.quoteNumber,
       status: quotes.status,
       notes: quotes.notes,
+      paymentMethod: quotes.paymentMethod,
+      paidAt: quotes.paidAt,
       createdAt: quotes.createdAt,
       updatedAt: quotes.updatedAt,
       clientId: quotes.clientId,
@@ -120,6 +126,10 @@ export async function getAllQuotes(opts: GetAllQuotesOptions = {}) {
 
 export async function getQuotesByClient(clientId: string) {
   return getAllQuotes({ clientId })
+}
+
+export async function getPaidQuotesByClient(clientId: string) {
+  return getAllQuotes({ clientId, paidOnly: true })
 }
 
 export async function getQuoteApprovalLog(quoteId: string) {
