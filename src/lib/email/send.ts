@@ -11,7 +11,29 @@ import { eq } from 'drizzle-orm'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const FROM_ADDRESS = process.env.EMAIL_FROM ?? 'Seekingbusiness <noreply@seekingbusiness.com>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+
+// Known-good production URL — emails must never contain a localhost link or
+// image, even if NEXT_PUBLIC_APP_URL is unset or misconfigured for the
+// environment that triggered the send.
+const PRODUCTION_APP_URL = 'https://rodamientos-steyrbearingsgroup.vercel.app'
+
+/**
+ * Resolves the public-facing app URL for use in emails. Falls back to the
+ * known production URL whenever NEXT_PUBLIC_APP_URL is unset or points at
+ * localhost, so links/images in emails are always reachable by recipients.
+ */
+export function resolvePublicAppUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const isLocal =
+    !configured ||
+    configured.includes('localhost') ||
+    configured.includes('127.0.0.1') ||
+    configured.includes('0.0.0.0')
+
+  return isLocal ? PRODUCTION_APP_URL : configured.replace(/\/$/, '')
+}
+
+const APP_URL = resolvePublicAppUrl()
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

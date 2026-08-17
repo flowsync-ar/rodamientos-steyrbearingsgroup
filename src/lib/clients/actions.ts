@@ -21,7 +21,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult } from '@/lib/types/action-result'
 import { revalidatePath } from 'next/cache'
 import { notify } from '@/lib/notifications'
-import { sendActivateAccountEmail } from '@/lib/email/send'
+import { sendActivateAccountEmail, resolvePublicAppUrl } from '@/lib/email/send'
 
 function toTitleCase(str: string): string {
   return str
@@ -151,7 +151,7 @@ export async function registerClient(
           console.error('[EMAIL] Failed to generate activation link:', error)
           return
         }
-        const activateUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm?token_hash=${data.properties.hashed_token}&type=signup`
+        const activateUrl = `${resolvePublicAppUrl()}/auth/confirm?token_hash=${data.properties.hashed_token}&type=signup`
         return sendActivateAccountEmail(email, activateUrl)
       })
       .catch((err) => {
