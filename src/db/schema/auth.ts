@@ -14,8 +14,6 @@ export const profiles = pgTable('profiles', {
   phone: text('phone'),
   role: appRoleEnum('role').notNull().default('cliente'),
   assignedSalespersonId: uuid('assigned_salesperson_id'),
-  // Default price list for salesperson quotes — null means use client's assigned list
-  defaultPriceListId: uuid('default_price_list_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

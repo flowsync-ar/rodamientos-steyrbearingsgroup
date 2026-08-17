@@ -8,8 +8,6 @@ import {
   pgEnum,
 } from 'drizzle-orm/pg-core'
 import { profiles } from './auth'
-// Forward reference: priceLists is defined in quotes.ts — imported lazily to avoid circular deps
-// The priceListId column references price_lists(id) at the DB level
 
 export const afipStatusEnum = pgEnum('afip_status', [
   'validated',
@@ -40,8 +38,6 @@ export const clients = pgTable('clients', {
   industry: text('industry'),
   validationPending: boolean('validation_pending').default(false).notNull(),
   clientConfig: jsonb('client_config').$type<Record<string, unknown>>(),
-  // Assigned price list — FK to price_lists(id); nullable means "no special pricing"
-  priceListId: uuid('price_list_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

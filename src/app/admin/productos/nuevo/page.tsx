@@ -37,6 +37,24 @@ export default async function NuevoProductoPage() {
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="costPrice">Precio de costo</Label>
+            <Input
+              id="costPrice"
+              name="costPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="stock">Stock disponible</Label>
+            <Input id="stock" name="stock" type="number" step="1" min="0" defaultValue={0} />
+          </div>
+        </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="categoryId">Categoría</Label>
           <select
@@ -84,7 +102,6 @@ export default async function NuevoProductoPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <input type="hidden" name="active" value="false" />
           <input
             id="active"
             name="active"
@@ -93,6 +110,7 @@ export default async function NuevoProductoPage() {
             defaultChecked
             className="size-4 rounded border border-input"
           />
+          <input type="hidden" name="active" value="false" />
           <Label htmlFor="active">Activo (visible en el catálogo)</Label>
         </div>
 

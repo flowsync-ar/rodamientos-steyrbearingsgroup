@@ -49,6 +49,8 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
     const imagesRaw = (formData.get('images') as string) ?? ''
     const specsRaw = (formData.get('specs') as string) ?? ''
     const active = formData.get('active') === 'true'
+    const costPriceRaw = formData.get('costPrice') as string | null
+    const stockRaw = formData.get('stock') as string | null
 
     if (!name?.trim()) return { success: false, error: 'El nombre es obligatorio' }
     if (!sku?.trim()) return { success: false, error: 'El SKU es obligatorio' }
@@ -63,6 +65,8 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
         images: parseImages(imagesRaw),
         specs: parseSpecs(specsRaw),
         active,
+        costPrice: costPriceRaw ? costPriceRaw : null,
+        stock: stockRaw ? Number(stockRaw) : 0,
       })
       .returning({ id: products.id })
 
@@ -90,6 +94,8 @@ export async function updateProduct(
     const imagesRaw = (formData.get('images') as string) ?? ''
     const specsRaw = (formData.get('specs') as string) ?? ''
     const active = formData.get('active') === 'true'
+    const costPriceRaw = formData.get('costPrice') as string | null
+    const stockRaw = formData.get('stock') as string | null
 
     if (!name?.trim()) return { success: false, error: 'El nombre es obligatorio' }
     if (!sku?.trim()) return { success: false, error: 'El SKU es obligatorio' }
@@ -104,6 +110,8 @@ export async function updateProduct(
         images: parseImages(imagesRaw),
         specs: parseSpecs(specsRaw),
         active,
+        costPrice: costPriceRaw ? costPriceRaw : null,
+        stock: stockRaw ? Number(stockRaw) : 0,
         updatedAt: new Date(),
       })
       .where(eq(products.id, id))
@@ -166,6 +174,8 @@ export async function cloneProduct(id: string): Promise<ActionResult<{ id: strin
         description: original.description,
         specs: original.specs as Record<string, string> | null,
         images: original.images,
+        costPrice: original.costPrice,
+        stock: 0,
         active: false,
       })
       .returning({ id: products.id })

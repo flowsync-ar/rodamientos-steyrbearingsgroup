@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Building2, Bell, Star, UserCog } from 'lucide-react'
+import { Building2, Bell, Star, UserCog, Percent } from 'lucide-react'
 
 const sections = [
   {
@@ -13,6 +13,12 @@ const sections = [
     icon: UserCog,
     title: 'Vendedores',
     description: 'Creá y gestioná las cuentas de tu equipo de ventas.',
+  },
+  {
+    href: '/admin/settings/margenes',
+    icon: Percent,
+    title: 'Márgenes por rubro',
+    description: 'Margen de ganancia según el rubro del cliente, y precio de costo de los productos.',
   },
   {
     href: '/admin/settings/alertas',

@@ -17,7 +17,7 @@ import { eq, and } from 'drizzle-orm'
 import type { ActionResult } from '@/lib/types/action-result'
 import { getUser, requireAdmin } from '@/lib/auth/get-user'
 import { canApproveQuotes } from '@/lib/auth/roles'
-import { getEffectiveMargin } from '@/lib/pricing/queries'
+import { getEffectiveMarginForClient } from '@/lib/pricing/queries'
 import { getProductById } from '@/lib/products/queries'
 import { getClientIdByProfileId } from '@/lib/interest-lists/queries'
 import { getQuoteApprovalLog } from './queries'
@@ -58,7 +58,7 @@ export async function addQuoteItem(
   quoteId: string,
   productId: string,
   quantity: number
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; unitPrice: number; marginPercent: number; subtotal: number }>> {
   try {
     const user = await getUser()
     if (!user) return { success: false, error: 'No autorizado', code: 'UNAUTHENTICATED' }
@@ -76,19 +76,14 @@ export async function addQuoteItem(
       return { success: false, error: 'Solo se pueden editar presupuestos en borrador', code: 'INVALID_STATUS' }
     }
 
-    // Get product base price — we treat product cost as unit_price base
-    // In this schema there is no separate cost field; unit_price IS the final price after margin
     const product = await getProductById(productId)
     if (!product) return { success: false, error: 'Producto no encontrado', code: 'NOT_FOUND' }
 
-    // Get effective margin from client's price list
-    const pricing = await getEffectiveMargin(productId, quote.clientId)
+    // Suggested price = product cost * (1 + margin for the client's industry).
+    // The salesperson can still override both via updateQuoteItem.
+    const pricing = await getEffectiveMarginForClient(quote.clientId)
     const marginPercent = pricing.marginPercent
-
-    // unit_price here represents the list price (cost * (1 + margin/100))
-    // We store 0 as base cost since the schema has no cost field;
-    // in real use the salesperson adjusts via updateQuoteItem.
-    const baseUnitPrice = 0
+    const baseUnitPrice = Number(product.costPrice ?? 0)
     const unitPrice = baseUnitPrice * (1 + marginPercent / 100)
     const subtotal = unitPrice * quantity
 
@@ -112,7 +107,7 @@ export async function addQuoteItem(
 
     revalidatePath(`/admin/presupuestos/${quoteId}`)
     revalidatePath('/admin/presupuestos/nuevo')
-    return { success: true, data: { id: item.id } }
+    return { success: true, data: { id: item.id, unitPrice, marginPercent, subtotal } }
   } catch (err) {
     return {
       success: false,
@@ -578,10 +573,12 @@ export async function convertQuoteRequest(
       .where(eq(interestListItems.interestListId, request.interestListId))
 
     if (items.length > 0) {
+      const pricing = await getEffectiveMarginForClient(request.clientId)
       const itemInserts = await Promise.all(
         items.map(async (item) => {
-          const pricing = await getEffectiveMargin(item.productId, request.clientId)
-          const unitPrice = 0 // salesperson sets actual price
+          const product = await getProductById(item.productId)
+          const baseUnitPrice = Number(product?.costPrice ?? 0)
+          const unitPrice = baseUnitPrice * (1 + pricing.marginPercent / 100)
           const subtotal = unitPrice * item.quantity
           return {
             quoteId: quote.id,

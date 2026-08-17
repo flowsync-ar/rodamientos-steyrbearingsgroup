@@ -22,6 +22,13 @@
       "when": 1786989747093,
       "tag": "0002_jazzy_paper_doll",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786997480680,
+      "tag": "0003_pricing_by_industry",
+      "breakpoints": true
     }
   ]
 }

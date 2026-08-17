@@ -1,11 +1,19 @@
 import { db } from '@/db'
 import { products, categories } from '@/db/schema'
 import { sql, eq, and } from 'drizzle-orm'
-import type { Product } from '@/db/schema'
 
-export interface TextSearchResult extends Omit<Product, 'specs' | 'images'> {
+// Public-facing search result — intentionally excludes costPrice.
+export interface TextSearchResult {
+  id: string
+  sku: string
+  name: string
+  description: string | null
   specs: unknown
   images: string[] | null
+  active: boolean
+  categoryId: string | null
+  createdAt: Date
+  updatedAt: Date
   categoryName: string | null
 }
 

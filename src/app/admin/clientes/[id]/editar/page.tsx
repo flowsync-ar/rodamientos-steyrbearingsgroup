@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { getClientWithScore } from '@/lib/clients/queries'
 import { updateClient } from '@/lib/clients/actions'
+import { getAllIndustryMargins } from '@/lib/pricing/queries'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound, redirect } from 'next/navigation'
 import { EditClientForm } from '@/components/features/clients/EditClientForm'
@@ -15,7 +16,10 @@ type ActionState = { error?: string } | null
 
 export default async function EditarClientePage({ params }: Props) {
   const { id } = await params
-  const client = await getClientWithScore(id)
+  const [client, industryMargins] = await Promise.all([
+    getClientWithScore(id),
+    getAllIndustryMargins(),
+  ])
   if (!client) notFound()
 
   const admin = createAdminClient()
@@ -46,7 +50,12 @@ export default async function EditarClientePage({ params }: Props) {
 
       <h1 className="text-2xl font-bold">Editar cliente</h1>
 
-      <EditClientForm clientId={id} client={client} action={handleUpdate} />
+      <EditClientForm
+        clientId={id}
+        client={client}
+        industries={industryMargins.map((m) => m.industry)}
+        action={handleUpdate}
+      />
     </div>
   )
 }

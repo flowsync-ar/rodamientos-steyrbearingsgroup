@@ -30,23 +30,12 @@ export const paymentMethodEnum = pgEnum('payment_method', [
   'tarjeta',
 ])
 
-export const priceLists = pgTable('price_lists', {
+export const industryMargins = pgTable('industry_margins', {
   id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  description: text('description'),
-  createdBy: uuid('created_by').references(() => profiles.id),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
-
-export const priceListRules = pgTable('price_list_rules', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  priceListId: uuid('price_list_id')
-    .notNull()
-    .references(() => priceLists.id, { onDelete: 'cascade' }),
-  productId: uuid('product_id').references(() => products.id),
-  categoryId: uuid('category_id'),
+  industry: text('industry').notNull().unique(),
   marginPercent: decimal('margin_percent', { precision: 5, scale: 2 }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
 export const quotes = pgTable('quotes', {
@@ -98,4 +87,4 @@ export const quoteApprovalLog = pgTable('quote_approval_log', {
 export type Quote = typeof quotes.$inferSelect
 export type NewQuote = typeof quotes.$inferInsert
 export type QuoteItem = typeof quoteItems.$inferSelect
-export type PriceList = typeof priceLists.$inferSelect
+export type IndustryMargin = typeof industryMargins.$inferSelect

@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import { db } from '@/db'
 import { quotes, quoteItems, products } from '@/db/schema'
 import { eq, and, inArray, ne, desc, sql } from 'drizzle-orm'
-import type { Product } from '@/db/schema/catalog'
 
 let _anthropic: Anthropic | null = null
 
@@ -15,7 +14,10 @@ function getAnthropic(): Anthropic {
   return _anthropic
 }
 
-export interface ProductWithReason extends Product {
+export interface ProductWithReason {
+  id: string
+  sku: string
+  name: string
   reason: string
 }
 
@@ -152,7 +154,7 @@ If no good suggestion exists, return an empty array [].`
     for (const s of suggestions.slice(0, 3)) {
       const product = candidates.find((c) => c.id === s.productId)
       if (product) {
-        result.push({ ...product, reason: s.reason })
+        result.push({ id: product.id, sku: product.sku, name: product.name, reason: s.reason })
       }
     }
     return result

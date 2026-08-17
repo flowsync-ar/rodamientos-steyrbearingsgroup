@@ -21,8 +21,7 @@ import {
   categories,
   products,
   clients,
-  priceLists,
-  priceListRules,
+  industryMargins,
   quotes,
   quoteItems,
   clientScores,
@@ -88,10 +87,6 @@ const ID = {
   client3: '55555555-0000-4000-a000-000000000003',
   client4: '55555555-0000-4000-a000-000000000004',
   client5: '55555555-0000-4000-a000-000000000005',
-
-  // Price lists
-  listaA: '66666666-0000-4000-a000-000000000001',
-  listaB: '66666666-0000-4000-a000-000000000002',
 
   // Quotes (8)
   q1: '77777777-0000-4000-a000-000000000001',
@@ -634,8 +629,6 @@ async function seedProducts() {
 // 4. Clients
 // ---------------------------------------------------------------------------
 async function seedClients() {
-  // Price lists must exist before assigning them — seeded in seedPriceLists()
-  // This function is called AFTER seedPriceLists()
   await db
     .insert(clients)
     .values([
@@ -650,7 +643,6 @@ async function seedClients() {
         bcraCachedAt: new Date(),
         industry: 'Agrícola',
         validationPending: false,
-        priceListId: ID.listaA,
       },
       {
         id: ID.client2,
@@ -663,7 +655,6 @@ async function seedClients() {
         bcraCachedAt: new Date(),
         industry: 'Industrial',
         validationPending: false,
-        priceListId: ID.listaA,
       },
       {
         id: ID.client3,
@@ -676,7 +667,6 @@ async function seedClients() {
         bcraCachedAt: new Date(),
         industry: 'Agrícola',
         validationPending: false,
-        priceListId: ID.listaB,
       },
       {
         id: ID.client4,
@@ -690,7 +680,6 @@ async function seedClients() {
         bcraCachedAt: new Date(),
         industry: 'Automotriz',
         validationPending: false,
-        priceListId: ID.listaB,
       },
       {
         id: ID.client5,
@@ -704,7 +693,6 @@ async function seedClients() {
         bcraCachedAt: new Date(),
         industry: 'Industrial',
         validationPending: false,
-        priceListId: ID.listaB,
       },
     ])
     .onConflictDoNothing()
@@ -713,55 +701,19 @@ async function seedClients() {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Price Lists + Rules
+// 5. Industry margins
 // ---------------------------------------------------------------------------
-async function seedPriceLists() {
+async function seedIndustryMargins() {
   await db
-    .insert(priceLists)
+    .insert(industryMargins)
     .values([
-      {
-        id: ID.listaA,
-        name: 'Lista A — Clientes Preferenciales',
-        description: 'Margen reducido para clientes con volumen y buen historial crediticio.',
-        createdBy: ID.diego,
-      },
-      {
-        id: ID.listaB,
-        name: 'Lista B — Clientes Estándar',
-        description: 'Margen estándar aplicado a clientes nuevos o sin historial suficiente.',
-        createdBy: ID.diego,
-      },
+      { industry: 'Agrícola', marginPercent: '10.00' },
+      { industry: 'Automotriz', marginPercent: '8.00' },
+      { industry: 'Industrial', marginPercent: '12.00' },
     ])
     .onConflictDoNothing()
 
-  // Rules: one per category per list (margin applied to all products in that category)
-  const categoryIds = [
-    ID.catBolas,
-    ID.catRodillos,
-    ID.catConicos,
-    ID.catAgricolas,
-    ID.catSellos,
-    ID.catAccesorios,
-  ]
-
-  const rulesA = categoryIds.map((catId) => ({
-    priceListId: ID.listaA,
-    categoryId: catId,
-    marginPercent: '15.00',
-  }))
-
-  const rulesB = categoryIds.map((catId) => ({
-    priceListId: ID.listaB,
-    categoryId: catId,
-    marginPercent: '25.00',
-  }))
-
-  await db
-    .insert(priceListRules)
-    .values([...rulesA, ...rulesB])
-    .onConflictDoNothing()
-
-  console.log('✓ Seeded price lists (2) + rules (12)')
+  console.log('✓ Seeded industry margins (3)')
 }
 
 // ---------------------------------------------------------------------------
@@ -1110,8 +1062,8 @@ async function main() {
   await seedProfiles()
   await seedCategories()
   await seedProducts()
-  await seedPriceLists()
-  await seedClients()       // needs price lists to exist first
+  await seedIndustryMargins()
+  await seedClients()
   await seedQuotes()
   await seedClientScores()
   await seedScoringConfig()

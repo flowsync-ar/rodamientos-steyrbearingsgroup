@@ -164,7 +164,6 @@ export default function NuevoPresupuestoPage() {
     startTransition(async () => {
       const result = await addQuoteItem(quoteId, product.id, 1)
       if (result.success) {
-        // Optimistically add line item — real data will come from server on revalidate
         setLineItems((prev) => [
           ...prev,
           {
@@ -173,9 +172,9 @@ export default function NuevoPresupuestoPage() {
             productName: product.name,
             productSku: product.sku,
             quantity: 1,
-            unitPrice: 0,
-            marginPercent: 0,
-            subtotal: 0,
+            unitPrice: result.data.unitPrice,
+            marginPercent: result.data.marginPercent,
+            subtotal: result.data.subtotal,
           },
         ])
       } else {

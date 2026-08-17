@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { db } from '@/db'
 import { products, productEmbeddings } from '@/db/schema'
 import { eq, isNull, desc } from 'drizzle-orm'
-import { getAllProducts } from '@/lib/products/queries'
+import { getAllProductsAdmin } from '@/lib/products/queries'
 import { getAllCategories } from '@/lib/categories/queries'
 import { toggleProductActive, deleteProduct, cloneProduct } from '@/lib/products/actions'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -45,7 +45,7 @@ export default async function ProductosPage({ searchParams }: PageProps) {
 
   const [{ data: productList, total, totalPages }, categoriesList, productsWithoutEmbeddings] =
     await Promise.all([
-      getAllProducts({
+      getAllProductsAdmin({
         search: q,
         categoryId,
         page: page ? Number(page) : 1,
@@ -136,6 +136,8 @@ export default async function ProductosPage({ searchParams }: PageProps) {
                 <TableHead>Nombre</TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead>Categoría</TableHead>
+                <TableHead className="text-right">Costo</TableHead>
+                <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="w-56" />
               </TableRow>
@@ -143,7 +145,7 @@ export default async function ProductosPage({ searchParams }: PageProps) {
             <TableBody>
               {productList.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No se encontraron productos.
                   </TableCell>
                 </TableRow>
@@ -158,6 +160,14 @@ export default async function ProductosPage({ searchParams }: PageProps) {
                     ) : (
                       <span className="text-muted-foreground text-xs">—</span>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {p.costPrice ? `$${Number(p.costPrice).toFixed(2)}` : '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className={p.stock <= 0 ? 'text-destructive font-medium' : ''}>
+                      {p.stock}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <form

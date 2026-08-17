@@ -1,10 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { UploadCloud, FileText, Download } from 'lucide-react'
 import { importProductsFromCSV } from './actions'
+
+const TEMPLATE_CSV = `name,sku,category_slug,description,active
+Rodamiento de Bola 6205-2RS,6205-2RS,rodamiento-de-ruedas,Rodamiento rígido de bolas con dos sellos de caucho,true
+Rodamiento Cónico 30207,30207,rodamientos-diferencial,Rodamiento cónico para cargas axiales y radiales,true
+`
+
+function downloadTemplate() {
+  const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'productos-template.csv'
+  link.click()
+  URL.revokeObjectURL(url)
+}
 
 interface ParsedRow {
   name: string
@@ -46,15 +62,30 @@ function parseCSV(text: string): ParsedRow[] {
 
 export default function ImportarPage() {
   const [rows, setRows] = useState<ParsedRow[]>([])
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [dragActive, setDragActive] = useState(false)
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<{ imported: number; errors: string[] } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function loadFile(file: File) {
+    const text = await file.text()
+    setFileName(file.name)
+    setRows(parseCSV(text))
+    setResult(null)
+  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const text = await file.text()
-    setRows(parseCSV(text))
-    setResult(null)
+    loadFile(file)
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setDragActive(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) loadFile(file)
   }
 
   async function handleImport() {
@@ -78,22 +109,58 @@ export default function ImportarPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Importar Productos (CSV)</h1>
-        <p className="text-sm text-muted-foreground">
-          Columnas requeridas: <code className="font-mono text-xs">name, sku, category_slug, description, active</code>
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Importar Productos (CSV)</h1>
+          <p className="text-sm text-muted-foreground">
+            Columnas requeridas: <code className="font-mono text-xs">name, sku, category_slug, description, active</code>
+          </p>
+        </div>
+        <Button variant="outline" onClick={downloadTemplate} className="shrink-0 gap-2">
+          <Download className="h-4 w-4" />
+          Exportar template
+        </Button>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="csv">Archivo CSV</Label>
+        <Label>Archivo CSV</Label>
         <input
+          ref={fileInputRef}
           id="csv"
           type="file"
           accept=".csv,text/csv"
           onChange={handleFileChange}
-          className="block text-sm"
+          className="hidden"
         />
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragActive(true)
+          }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${
+            dragActive ? 'border-primary bg-muted/50' : 'border-input hover:bg-muted/30'
+          }`}
+        >
+          {fileName ? (
+            <>
+              <FileText className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">{fileName}</p>
+              <p className="text-xs text-muted-foreground">Hacé clic para elegir otro archivo</p>
+            </>
+          ) : (
+            <>
+              <UploadCloud className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">Hacé clic para elegir un archivo CSV</p>
+              <p className="text-xs text-muted-foreground">o arrastralo y soltalo acá</p>
+            </>
+          )}
+        </div>
       </div>
 
       {rows.length > 0 && (

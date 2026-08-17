@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   jsonb,
+  decimal,
 } from 'drizzle-orm/pg-core'
 import { customType } from 'drizzle-orm/pg-core'
 
@@ -44,6 +45,8 @@ export const products = pgTable('products', {
   description: text('description'),
   specs: jsonb('specs'),
   images: text('images').array(),
+  costPrice: decimal('cost_price', { precision: 12, scale: 2 }),
+  stock: integer('stock').notNull().default(0),
   active: boolean('active').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

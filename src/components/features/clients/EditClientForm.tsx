@@ -21,10 +21,11 @@ interface Client {
 interface Props {
   clientId: string
   client: Client
+  industries: string[]
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>
 }
 
-export function EditClientForm({ clientId, client, action }: Props) {
+export function EditClientForm({ clientId, client, industries, action }: Props) {
   const [state, formAction, isPending] = useActionState(action, null)
 
   return (
@@ -82,12 +83,29 @@ export function EditClientForm({ clientId, client, action }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="industry">Industria</Label>
-            <Input
+            <Label htmlFor="industry">Rubro</Label>
+            <select
               id="industry"
               name="industry"
               defaultValue={client.industry ?? ''}
-            />
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="">Sin definir</option>
+              {industries.map((ind) => (
+                <option key={ind} value={ind}>
+                  {ind}
+                </option>
+              ))}
+              {client.industry && !industries.includes(client.industry) && (
+                <option value={client.industry}>{client.industry} (sin margen configurado)</option>
+              )}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Define el margen de ganancia aplicado en sus presupuestos.{' '}
+              <Link href="/admin/settings/margenes" className="underline">
+                Configurar márgenes
+              </Link>
+            </p>
           </div>
 
           {state?.error && (
