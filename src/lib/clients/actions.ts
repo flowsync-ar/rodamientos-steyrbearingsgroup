@@ -11,6 +11,7 @@ import {
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { validateCuitAfip } from '@/lib/afip/index'
 import { getCachedAfipResult, setCachedAfipResult } from '@/lib/afip/cache'
 import { checkCuitBcra, deriveBcraRiskLevel } from '@/lib/bcra/index'
@@ -127,36 +128,42 @@ export async function registerClient(
       })
       .returning({ id: clients.id })
 
-    // Step 6: fire-and-forget AFIP + BCRA validation
-    // We do NOT await — registration succeeds regardless
-    validateClientCuit(client.id).catch((err) => {
-      console.error('[VALIDATION] Background validation failed:', err)
-    })
+    // Steps 6-8 run in the background — registration succeeds regardless —
+    // but wrapped in after() so Vercel keeps the function alive until they
+    // finish instead of freezing it as soon as the response is sent.
+    after(async () => {
+      // Step 6: AFIP + BCRA validation
+      await validateClientCuit(client.id).catch((err) => {
+        console.error('[VALIDATION] Background validation failed:', err)
+      })
 
-    // Step 7: notify admins of new pending activation
-    notify('client_pending_activation', {
-      clientId: client.id,
-      clientName: fullName,
-    }).catch(() => null)
+      // Step 7: notify admins of new pending activation
+      await notify('client_pending_activation', {
+        clientId: client.id,
+        clientName: fullName,
+      }).catch(() => null)
 
-    // Step 8: send account activation email
-    // admin.createUser() does not trigger Supabase's built-in confirmation
-    // email. We generate the confirmation link ourselves and send it via our
-    // own SMTP — Supabase's built-in mailer is capped at a couple sends/hour,
-    // not viable for real signups.
-    adminSupabase.auth.admin
-      .generateLink({ type: 'signup', email, password })
-      .then(({ data, error }) => {
+      // Step 8: send account activation email
+      // admin.createUser() does not trigger Supabase's built-in confirmation
+      // email. We generate the confirmation link ourselves and send it via our
+      // own SMTP — Supabase's built-in mailer is capped at a couple sends/hour,
+      // not viable for real signups.
+      try {
+        const { data, error } = await adminSupabase.auth.admin.generateLink({
+          type: 'signup',
+          email,
+          password,
+        })
         if (error || !data?.properties) {
           console.error('[EMAIL] Failed to generate activation link:', error)
           return
         }
         const activateUrl = `${resolvePublicAppUrl()}/auth/confirm?token_hash=${data.properties.hashed_token}&type=signup`
-        return sendActivateAccountEmail(email, activateUrl)
-      })
-      .catch((err) => {
+        await sendActivateAccountEmail(email, activateUrl)
+      } catch (err) {
         console.error('[EMAIL] Failed to send activation email:', err)
-      })
+      }
+    })
 
     return {
       success: true,

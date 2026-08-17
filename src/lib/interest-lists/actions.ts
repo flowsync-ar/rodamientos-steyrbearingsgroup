@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { db } from '@/db'
 import { interestLists, interestListItems, quoteRequests, clients, profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -129,13 +130,15 @@ export async function requestQuote(interestListId: string): Promise<ActionResult
     const clientName = clientRows[0]?.razonSocial ?? 'Client'
     const productCount = listWithItems.items.length
 
-    // In-app notification — fire-and-forget
-    notify('new_quote_request', {
-      requestId: req.id,
-      clientId,
-      clientName,
-      productCount,
-    }).catch(() => {})
+    // In-app notification — non-blocking, kept alive past the response
+    after(() =>
+      notify('new_quote_request', {
+        requestId: req.id,
+        clientId,
+        clientName,
+        productCount,
+      }).catch(() => {})
+    )
 
     revalidatePath('/mi-lista')
     return { success: true, data: { requestId: req.id } }

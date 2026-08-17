@@ -276,6 +276,7 @@ export default async function PresupuestoDetailPage({ params }: Props) {
                     <span className="text-xs text-muted-foreground">
                       por {entry.actorName} —{' '}
                       {new Date(entry.performedAt).toLocaleString('es-AR', {
+                        timeZone: 'America/Argentina/Buenos_Aires',
                         hour12: false,
                       })}
                     </span>

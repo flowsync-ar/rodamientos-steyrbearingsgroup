@@ -39,8 +39,8 @@ export async function createNoPurchaseAlert(
     status: 'pending',
   })
 
-  // In-app notification to admin — fire-and-forget
-  notify('no_purchase_alert', { clientId, daysSincePurchase: daysSince }).catch(() => {})
+  // In-app notification to admin
+  await notify('no_purchase_alert', { clientId, daysSincePurchase: daysSince }).catch(() => {})
 }
 
 /**

@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/auth/get-user'
 import { sendVendedorInviteEmail, resolvePublicAppUrl } from '@/lib/email/send'
@@ -70,9 +71,11 @@ export async function createVendedor(
       throw err
     }
 
-    sendVendedorSetPasswordEmail(email, fullName.trim()).catch((err) => {
-      console.error('[EMAIL] Failed to send vendedor invite email:', err)
-    })
+    after(() =>
+      sendVendedorSetPasswordEmail(email, fullName.trim()).catch((err) => {
+        console.error('[EMAIL] Failed to send vendedor invite email:', err)
+      })
+    )
 
     revalidatePath('/admin/settings/vendedores')
     return { success: true, data: { profileId: authData.user.id } }

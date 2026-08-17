@@ -70,11 +70,11 @@ export default async function PresupuestosPage({ searchParams }: Props) {
 
       {/* Pending quote requests section (admin only) */}
       {admin && pendingRequests.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
+        <Card className="border-purple-200">
+          <CardHeader className="bg-purple-50">
+            <CardTitle className="text-base text-purple-900">
               Solicitudes de presupuesto pendientes{' '}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2 bg-purple-200 text-purple-800">
                 {pendingRequests.length}
               </Badge>
             </CardTitle>

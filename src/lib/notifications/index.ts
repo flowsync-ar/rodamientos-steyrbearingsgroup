@@ -32,28 +32,28 @@ function buildNotificationContent(
   switch (type) {
     case 'quote_approved':
       return {
-        title: 'Quote approved',
-        body: `Quote ${payload.quoteId ? payload.quoteId.slice(0, 8) : ''} has been approved and is ready to send.`,
+        title: 'Presupuesto aprobado',
+        body: `El presupuesto ${payload.quoteId ? payload.quoteId.slice(0, 8) : ''} fue aprobado y está listo para enviar.`,
       }
     case 'quote_rejected':
       return {
-        title: 'Quote rejected',
-        body: `Quote ${payload.quoteId ? payload.quoteId.slice(0, 8) : ''} was rejected. Please review the comments.`,
+        title: 'Presupuesto rechazado',
+        body: `El presupuesto ${payload.quoteId ? payload.quoteId.slice(0, 8) : ''} fue rechazado. Revisá los comentarios.`,
       }
     case 'quote_sent':
       return {
-        title: 'Quote sent to client',
-        body: `Quote ${payload.quoteId ? payload.quoteId.slice(0, 8) : ''} has been sent to the client.`,
+        title: 'Presupuesto enviado al cliente',
+        body: `El presupuesto ${payload.quoteId ? payload.quoteId.slice(0, 8) : ''} fue enviado al cliente.`,
       }
     case 'new_quote_request':
       return {
-        title: 'New quote request',
-        body: `${payload.clientName ?? 'A client'} has requested a quote.`,
+        title: 'Nueva solicitud de presupuesto',
+        body: `${payload.clientName ?? 'Un cliente'} solicitó un presupuesto.`,
       }
     case 'no_purchase_alert':
       return {
-        title: 'No-purchase alert',
-        body: `Client ${payload.clientName ?? payload.clientId ?? ''} has not purchased recently.`,
+        title: 'Alerta de inactividad',
+        body: `El cliente ${payload.clientName ?? payload.clientId ?? ''} no compró recientemente.`,
       }
     case 'voice_consultation':
       return {

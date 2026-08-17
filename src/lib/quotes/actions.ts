@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { db } from '@/db'
 import {
   quotes,
@@ -325,17 +326,14 @@ export async function approveQuote(quoteId: string, notes?: string): Promise<Act
       notes: notes ?? null,
     })
 
-    // Notify client via email — non-blocking
-    getClientEmail(rows[0].clientId)
-      .then((email) => {
-        if (email) {
-          sendQuoteApprovedEmail(email, quoteId).catch(() => {})
-        }
-      })
-      .catch(() => {})
-
-    // In-app notification — fire-and-forget
-    notify('quote_approved', { quoteId, clientId: rows[0].clientId }).catch(() => {})
+    // Notify client via email + in-app notification — non-blocking, but kept
+    // alive past the response via after() so Vercel doesn't freeze the
+    // function before the SMTP send completes.
+    after(async () => {
+      const email = await getClientEmail(rows[0].clientId).catch(() => null)
+      if (email) await sendQuoteApprovedEmail(email, quoteId).catch(() => {})
+      await notify('quote_approved', { quoteId, clientId: rows[0].clientId }).catch(() => {})
+    })
 
     revalidatePath(`/admin/presupuestos/${quoteId}`)
     revalidatePath('/admin/presupuestos')
@@ -371,8 +369,8 @@ export async function rejectQuote(
       notes: reason,
     })
 
-    // In-app notification — fire-and-forget
-    notify('quote_rejected', { quoteId }).catch(() => {})
+    // In-app notification — non-blocking, kept alive past the response
+    after(() => notify('quote_rejected', { quoteId }).catch(() => {}))
 
     revalidatePath(`/admin/presupuestos/${quoteId}`)
     revalidatePath('/admin/presupuestos')
@@ -417,17 +415,14 @@ export async function sendQuoteToClient(quoteId: string): Promise<ActionResult<v
       notes: null,
     })
 
-    // Notify client via email — non-blocking
-    getClientEmail(rows[0].clientId)
-      .then((email) => {
-        if (email) {
-          sendQuoteSentEmail(email, quoteId).catch(() => {})
-        }
-      })
-      .catch(() => {})
-
-    // In-app notification — fire-and-forget
-    notify('quote_sent', { quoteId, clientId: rows[0].clientId }).catch(() => {})
+    // Notify client via email + in-app notification — non-blocking, but kept
+    // alive past the response via after() so Vercel doesn't freeze the
+    // function before the SMTP send completes.
+    after(async () => {
+      const email = await getClientEmail(rows[0].clientId).catch(() => null)
+      if (email) await sendQuoteSentEmail(email, quoteId).catch(() => {})
+      await notify('quote_sent', { quoteId, clientId: rows[0].clientId }).catch(() => {})
+    })
 
     revalidatePath(`/admin/presupuestos/${quoteId}`)
     revalidatePath('/admin/presupuestos')
