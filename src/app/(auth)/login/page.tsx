@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
 type ActionState = { error?: string; success?: boolean } | null
 
@@ -18,6 +18,8 @@ export default function LoginPage() {
     signIn as (state: ActionState, payload: FormData) => Promise<ActionState>,
     null
   )
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   return (
     <Card>
@@ -45,6 +47,8 @@ export default function LoginPage() {
               placeholder="vos@empresa.com"
               required
               autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -59,6 +63,8 @@ export default function LoginPage() {
               name="password"
               required
               autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           {state?.error && (

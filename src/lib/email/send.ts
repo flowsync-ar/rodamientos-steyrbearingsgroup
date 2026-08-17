@@ -4,6 +4,7 @@ import { renderQuoteSentEmail } from './templates/quote-sent'
 import { renderNewQuoteRequestEmail } from './templates/new-quote-request'
 import { renderCampaignEmail } from './templates/campaign'
 import { renderActivateAccountEmail } from './templates/activate-account'
+import { renderVendedorInviteEmail } from './templates/vendedor-invite'
 import { sendSmtpMail } from './smtp'
 import { db } from '@/db'
 import { quotes, quoteItems, clients, profiles } from '@/db/schema'
@@ -218,6 +219,29 @@ export async function sendActivateAccountEmail(
   await sendSmtpMail({
     to: clientEmail,
     subject: 'Activá tu cuenta — Steyr Bearing Group',
+    html,
+  })
+}
+
+/**
+ * Sends the account-setup email to a newly created vendedor, so they can
+ * choose their own password instead of the admin setting one for them.
+ * Non-blocking — callers should attach .catch(() => {}).
+ */
+export async function sendVendedorInviteEmail(
+  email: string,
+  fullName: string,
+  setPasswordUrl: string
+): Promise<void> {
+  const html = renderVendedorInviteEmail({
+    fullName,
+    setPasswordUrl,
+    logoUrl: `${APP_URL}/logo-blanco-email.png`,
+  })
+
+  await sendSmtpMail({
+    to: email,
+    subject: 'Activá tu cuenta de vendedor — Steyr Bearing Group',
     html,
   })
 }

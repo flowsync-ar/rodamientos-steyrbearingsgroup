@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { profiles } from '@/db/schema'
-import { inArray, desc } from 'drizzle-orm'
+import { inArray, desc, eq } from 'drizzle-orm'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export interface VendedorRow {
@@ -9,6 +9,27 @@ export interface VendedorRow {
   phone: string | null
   email: string | null
   createdAt: Date
+}
+
+export async function getVendedorById(id: string): Promise<VendedorRow | null> {
+  const rows = await db
+    .select({
+      id: profiles.id,
+      fullName: profiles.fullName,
+      phone: profiles.phone,
+      createdAt: profiles.createdAt,
+    })
+    .from(profiles)
+    .where(eq(profiles.id, id))
+    .limit(1)
+
+  const row = rows[0]
+  if (!row) return null
+
+  const admin = createAdminClient()
+  const { data } = await admin.auth.admin.getUserById(id)
+
+  return { ...row, email: data.user?.email ?? null }
 }
 
 export async function getAllVendedores(): Promise<VendedorRow[]> {
