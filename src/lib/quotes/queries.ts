@@ -9,6 +9,9 @@ import {
   quoteRequests,
 } from '@/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+
+const clientProfiles = alias(profiles, 'client_profiles')
 
 export async function getQuoteById(id: string) {
   const rows = await db
@@ -23,7 +26,7 @@ export async function getQuoteById(id: string) {
       updatedAt: quotes.updatedAt,
       // Client
       clientId: quotes.clientId,
-      clientName: clients.razonSocial,
+      clientName: sql<string>`coalesce(${clients.razonSocial}, ${clientProfiles.fullName})`,
       clientProfileId: clients.profileId,
       // Salesperson
       salespersonId: quotes.salespersonId,
@@ -31,6 +34,7 @@ export async function getQuoteById(id: string) {
     })
     .from(quotes)
     .innerJoin(clients, eq(clients.id, quotes.clientId))
+    .innerJoin(clientProfiles, eq(clientProfiles.id, clients.profileId))
     .innerJoin(profiles, eq(profiles.id, quotes.salespersonId))
     .where(eq(quotes.id, id))
     .limit(1)
@@ -91,7 +95,7 @@ export async function getAllQuotes(opts: GetAllQuotesOptions = {}) {
       createdAt: quotes.createdAt,
       updatedAt: quotes.updatedAt,
       clientId: quotes.clientId,
-      clientName: clients.razonSocial,
+      clientName: sql<string>`coalesce(${clients.razonSocial}, ${clientProfiles.fullName})`,
       salespersonId: quotes.salespersonId,
       salespersonName: profiles.fullName,
       itemCount: sql<number>`count(${quoteItems.id})::int`,
@@ -99,10 +103,11 @@ export async function getAllQuotes(opts: GetAllQuotesOptions = {}) {
     })
     .from(quotes)
     .innerJoin(clients, eq(clients.id, quotes.clientId))
+    .innerJoin(clientProfiles, eq(clientProfiles.id, clients.profileId))
     .innerJoin(profiles, eq(profiles.id, quotes.salespersonId))
     .leftJoin(quoteItems, eq(quoteItems.quoteId, quotes.id))
     .where(where)
-    .groupBy(quotes.id, clients.razonSocial, profiles.fullName)
+    .groupBy(quotes.id, clients.razonSocial, clientProfiles.fullName, profiles.fullName)
     .orderBy(desc(quotes.createdAt))
     .limit(pageSize)
     .offset(offset)
@@ -150,11 +155,12 @@ export async function getPendingQuoteRequests() {
       clientId: quoteRequests.clientId,
       status: quoteRequests.status,
       createdAt: quoteRequests.createdAt,
-      clientName: clients.razonSocial,
+      clientName: sql<string>`coalesce(${clients.razonSocial}, ${clientProfiles.fullName})`,
       clientProfileId: clients.profileId,
     })
     .from(quoteRequests)
     .innerJoin(clients, eq(clients.id, quoteRequests.clientId))
+    .innerJoin(clientProfiles, eq(clientProfiles.id, clients.profileId))
     .where(eq(quoteRequests.status, 'pending'))
     .orderBy(desc(quoteRequests.createdAt))
 }

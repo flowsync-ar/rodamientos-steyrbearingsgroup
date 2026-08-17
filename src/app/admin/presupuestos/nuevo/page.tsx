@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createQuote, addQuoteItem, updateQuoteItem, removeQuoteItem, updateQuoteNotes, submitQuoteForApproval } from '@/lib/quotes/actions'
+import { createQuote, addQuoteItem, updateQuoteItem, removeQuoteItem, updateQuoteNotes, submitQuoteForApproval, deleteQuote } from '@/lib/quotes/actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -129,6 +129,21 @@ export default function NuevoPresupuestoPage() {
     } finally {
       setProductSearchLoading(false)
     }
+  }
+
+  function handleChangeClient() {
+    const idToDelete = quoteId
+    startTransition(async () => {
+      if (idToDelete) await deleteQuote(idToDelete)
+    })
+    setSelectedClient(null)
+    setQuoteId(null)
+    setLineItems([])
+    setProductSearch('')
+    setProductResults([])
+    setClientSearch('')
+    setClientResults([])
+    setStep(1)
   }
 
   async function handleSelectClient(client: ClientOption) {
@@ -301,29 +316,6 @@ export default function NuevoPresupuestoPage() {
             {!clientSearchLoading && clientSearch.trim() && clientResults.length === 0 && (
               <p className="text-sm text-muted-foreground">No se encontraron clientes.</p>
             )}
-
-            {/* Demo: manual client ID entry for now */}
-            <div className="border rounded-md p-4 space-y-3">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                Development shortcut — enter client ID directly
-              </p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const fd = new FormData(e.currentTarget)
-                  const id = fd.get('clientId') as string
-                  if (id) {
-                    handleSelectClient({ id, name: 'Cliente ' + id.slice(0, 8), score: null, bcraRiskLevel: null })
-                  }
-                }}
-                className="flex gap-2"
-              >
-                <Input name="clientId" placeholder="UUID del cliente" className="font-mono text-xs" />
-                <Button type="submit" disabled={isPending}>
-                  Seleccionar
-                </Button>
-              </form>
-            </div>
           </CardContent>
         </Card>
       )}
@@ -333,21 +325,26 @@ export default function NuevoPresupuestoPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                Cliente:{' '}
-                <span className="font-normal">{selectedClient.name}</span>
-                {selectedClient.score !== null && (
-                  <span className="ml-2 text-yellow-400">
-                    {'★'.repeat(Math.round(selectedClient.score))}
-                    {'☆'.repeat(5 - Math.round(selectedClient.score))}
-                  </span>
-                )}
-                {selectedClient.bcraRiskLevel && (
-                  <Badge className={`ml-2 text-xs ${getBcraColor(selectedClient.bcraRiskLevel)}`}>
-                    BCRA: {selectedClient.bcraRiskLevel}
-                  </Badge>
-                )}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">
+                  Cliente:{' '}
+                  <span className="font-normal">{selectedClient.name}</span>
+                  {selectedClient.score !== null && (
+                    <span className="ml-2 text-yellow-400">
+                      {'★'.repeat(Math.round(selectedClient.score))}
+                      {'☆'.repeat(5 - Math.round(selectedClient.score))}
+                    </span>
+                  )}
+                  {selectedClient.bcraRiskLevel && (
+                    <Badge className={`ml-2 text-xs ${getBcraColor(selectedClient.bcraRiskLevel)}`}>
+                      BCRA: {selectedClient.bcraRiskLevel}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={handleChangeClient} disabled={isPending}>
+                  ← Cambiar cliente
+                </Button>
+              </div>
             </CardHeader>
           </Card>
 
@@ -401,29 +398,6 @@ export default function NuevoPresupuestoPage() {
               {!productSearchLoading && productSearch.trim() && productResults.length === 0 && (
                 <p className="text-sm text-muted-foreground">No se encontraron productos.</p>
               )}
-
-              {/* Demo shortcut */}
-              <div className="border rounded-md p-4 space-y-3">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                  Development shortcut — add product by ID
-                </p>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    const fd = new FormData(e.currentTarget)
-                    const id = fd.get('productId') as string
-                    const name = fd.get('productName') as string
-                    const sku = fd.get('productSku') as string
-                    if (id) handleAddProduct({ id, name: name || 'Producto', sku: sku || id.slice(0, 8) })
-                  }}
-                  className="flex gap-2 flex-wrap"
-                >
-                  <Input name="productId" placeholder="UUID del producto" className="font-mono text-xs flex-1" />
-                  <Input name="productName" placeholder="nombre" className="flex-1" />
-                  <Input name="productSku" placeholder="SKU" className="flex-1 max-w-[120px]" />
-                  <Button type="submit" disabled={isPending}>Agregar</Button>
-                </form>
-              </div>
             </CardContent>
           </Card>
 
